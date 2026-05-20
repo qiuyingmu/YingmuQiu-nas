@@ -3,9 +3,8 @@ import {
   getFiles,
   getFileTree,
   searchFiles,
-  createDirectory,
+  createFolder,
   renameFile,
-  deleteFile,
   deleteFiles,
   uploadFile,
   type FileItem,
@@ -15,27 +14,27 @@ import {
 interface FileState {
   currentFiles: FileItem[]
   fileTree: FileTreeItem[]
-  currentFolderId: number | null
+  currentFolderId: string | null
   currentPath: FileItem[]
   viewMode: 'list' | 'grid'
   searchQuery: string
   loading: boolean
   uploading: boolean
   uploadProgress: number
-  selectedFileIds: number[]
+  selectedFileIds: string[]
 
-  fetchFiles: (folderId?: number) => Promise<void>
+  fetchFiles: (folderId?: string) => Promise<void>
   fetchFileTree: () => Promise<void>
   search: (query: string) => Promise<void>
-  createFolder: (name: string, parentId?: number) => Promise<void>
-  rename: (id: number, name: string) => Promise<void>
-  remove: (id: number) => Promise<void>
-  batchRemove: (ids: number[]) => Promise<void>
-  upload: (file: File, parentId?: number) => Promise<void>
-  setCurrentFolderId: (id: number | null) => void
+  createFolder: (name: string, parentId?: string) => Promise<void>
+  rename: (id: string, name: string) => Promise<void>
+  remove: (id: string) => Promise<void>
+  batchRemove: (ids: string[]) => Promise<void>
+  upload: (file: File, parentId?: string) => Promise<void>
+  setCurrentFolderId: (id: string | null) => void
   setCurrentPath: (path: FileItem[]) => void
   setViewMode: (mode: 'list' | 'grid') => void
-  setSelectedFileIds: (ids: number[]) => void
+  setSelectedFileIds: (ids: string[]) => void
   setSearchQuery: (query: string) => void
   clearSearch: () => Promise<void>
 }
@@ -52,7 +51,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
   uploadProgress: 0,
   selectedFileIds: [],
 
-  fetchFiles: async (folderId?: number) => {
+  fetchFiles: async (folderId?: string) => {
     set({ loading: true })
     try {
       const files = await getFiles(folderId)
@@ -80,38 +79,38 @@ export const useFileStore = create<FileState>()((set, get) => ({
     set({ loading: true, searchQuery: query })
     try {
       const result = await searchFiles(query)
-      set({ currentFiles: result.files, loading: false })
+      set({ currentFiles: result, loading: false })
     } catch {
       set({ loading: false })
       throw new Error('????')
     }
   },
 
-  createFolder: async (name: string, parentId?: number) => {
-    await createDirectory(name, parentId)
+  createFolder: async (name: string, parentId?: string) => {
+    await createFolder(name, parentId)
     await get().fetchFiles(parentId ?? get().currentFolderId ?? undefined)
     await get().fetchFileTree()
   },
 
-  rename: async (id: number, name: string) => {
+  rename: async (id: string, name: string) => {
     await renameFile(id, name)
     await get().fetchFiles(get().currentFolderId ?? undefined)
     await get().fetchFileTree()
   },
 
-  remove: async (id: number) => {
-    await deleteFile(id)
+  remove: async (id: string) => {
+    await deleteFiles([id])
     await get().fetchFiles(get().currentFolderId ?? undefined)
     await get().fetchFileTree()
   },
 
-  batchRemove: async (ids: number[]) => {
+  batchRemove: async (ids: string[]) => {
     await deleteFiles(ids)
     await get().fetchFiles(get().currentFolderId ?? undefined)
     await get().fetchFileTree()
   },
 
-  upload: async (file: File, parentId?: number) => {
+  upload: async (file: File, parentId?: string) => {
     set({ uploading: true, uploadProgress: 0 })
     try {
       await uploadFile(file, parentId ?? get().currentFolderId ?? undefined, (percent) => {
@@ -125,7 +124,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
     }
   },
 
-  setCurrentFolderId: (id: number | null) => {
+  setCurrentFolderId: (id: string | null) => {
     set({ currentFolderId: id })
   },
 
@@ -137,7 +136,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
     set({ viewMode: mode })
   },
 
-  setSelectedFileIds: (ids: number[]) => {
+  setSelectedFileIds: (ids: string[]) => {
     set({ selectedFileIds: ids })
   },
 

@@ -22,9 +22,20 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        User user = userRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new UsernameNotFoundException("?????: " + userId));
+    public UserDetails loadUserByUsername(String usernameOrId) throws UsernameNotFoundException {
+        // ??????(????)
+        User user = userRepository.findByUsername(usernameOrId)
+                .orElse(null);
+
+        // ?????UUID?(JWT????)
+        if (user == null) {
+            try {
+                user = userRepository.findById(UUID.fromString(usernameOrId))
+                        .orElseThrow(() -> new UsernameNotFoundException("?????: " + usernameOrId));
+            } catch (IllegalArgumentException e) {
+                throw new UsernameNotFoundException("?????: " + usernameOrId);
+            }
+        }
 
         return new org.springframework.security.core.userdetails.User(
                 user.getId().toString(),

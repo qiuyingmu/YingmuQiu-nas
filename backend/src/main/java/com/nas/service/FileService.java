@@ -38,13 +38,16 @@ public class FileService {
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final StorageConfig storageConfig;
+    private final MediaService mediaService;
 
     public FileService(FileRepository fileRepository,
                        UserRepository userRepository,
-                       StorageConfig storageConfig) {
+                       StorageConfig storageConfig,
+                       MediaService mediaService) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.storageConfig = storageConfig;
+        this.mediaService = mediaService;
     }
 
     // ---------- List ----------
@@ -168,9 +171,10 @@ public class FileService {
         file.setDeletedAt(LocalDateTime.now());
         fileRepository.save(file);
 
-        // Cascade delete children
+        // Cascade delete children (user-isolated)
         if (file.isFolder()) {
-            List<FileEntity> children = fileRepository.findByParentIdAndIsDeletedFalse(file.getId());
+            List<FileEntity> children = fileRepository.findByParentIdAndUserIdAndIsDeletedFalse(
+                    file.getId(), file.getUserId());
             for (FileEntity child : children) {
                 softDelete(child);
             }
@@ -281,7 +285,20 @@ public class FileService {
             user.setStorageUsed(user.getStorageUsed() + multipartFile.getSize());
             userRepository.save(user);
 
-            return FileResponse.fromEntity(fileRepository.save(file));
+            FileEntity savedFile = fileRepository.save(file);
+
+            // Register media metadata if applicable
+            if (contentType != null && (contentType.startsWith("image/")
+                    || contentType.startsWith("video/")
+                    || contentType.startsWith("audio/"))) {
+                try {
+                    mediaService.registerMedia(savedFile.getId(), savedFile.getStoragePath(), contentType);
+                } catch (Exception e) {
+                    log.warn("Failed to register media metadata for file: {}", savedFile.getId(), e);
+                }
+            }
+
+            return FileResponse.fromEntity(savedFile);
 
         } catch (BusinessException e) {
             throw e;

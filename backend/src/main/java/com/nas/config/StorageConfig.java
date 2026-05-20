@@ -36,6 +36,10 @@ public class StorageConfig {
     }
 
     public Path resolveRelativePath(String relativePath) {
-        return storagePath.resolve(relativePath).normalize();
+        Path resolved = storagePath.resolve(relativePath).normalize();
+        if (!resolved.startsWith(storagePath)) {
+            throw new SecurityException("??????");
+        }
+        return resolved;
     }
 }

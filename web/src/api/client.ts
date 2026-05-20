@@ -28,9 +28,20 @@ client.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
-// ?????:401 ???????
+// ?????:?? ApiResponse + 401 ??
 client.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // ?????? ApiResponse {code, message, data}
+    const body = response.data
+    if (body && typeof body === 'object' && 'code' in body && 'data' in body) {
+      if (body.code === 0) {
+        response.data = body.data
+      } else {
+        return Promise.reject(new Error(body.message || '????'))
+      }
+    }
+    return response
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth-storage')

@@ -25,5 +25,7 @@ spring:
 app:
   storage:
     dir: ./nas-data
+  ffmpeg:
+    path: ffmpeg
   jwt:
-    secret: c2VjdXJlLXNlY3JldC1rZXktZm9yLW5hcy1iYWNrZW5kLXByb2plY3QtMjAyNg==
+    secret: ${JWT_SECRET:c2VjdXJlLXNlY3JldC1rZXktZm9yLW5hcy1iYWNrZW5kLXByb2plY3QtMjAyNg==}

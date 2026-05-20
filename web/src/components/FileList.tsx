@@ -23,15 +23,15 @@ import type { FileItem } from '../api/files'
 import { useState } from 'react'
 import { getDownloadUrl } from '../api/files'
 
-function getFileIcon(name: string, mimeType: string) {
+function getFileIcon(name: string, mimeType?: string) {
   const ext = name.split('.').pop()?.toLowerCase()
-  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(ext || '')) {
+  if (mimeType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(ext || '')) {
     return <FileImageOutlined className="text-green-500 text-lg" />
   }
-  if (mimeType.startsWith('video/') || ['mp4', 'avi', 'mov', 'mkv', 'wmv'].includes(ext || '')) {
+  if (mimeType?.startsWith('video/') || ['mp4', 'avi', 'mov', 'mkv', 'wmv'].includes(ext || '')) {
     return <VideoCameraOutlined className="text-purple-500 text-lg" />
   }
-  if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'flac', 'aac'].includes(ext || '')) {
+  if (mimeType?.startsWith('audio/') || ['mp3', 'wav', 'flac', 'aac'].includes(ext || '')) {
     return <AudioOutlined className="text-pink-500 text-lg" />
   }
   if (['pdf'].includes(ext || '')) {
@@ -49,7 +49,7 @@ function getFileIcon(name: string, mimeType: string) {
   return <FileOutlined className="text-gray-500 text-lg" />
 }
 
-export default function FileList() {
+export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (file: FileItem) => void }) {
   const navigate = useNavigate()
   const currentFiles = useFileStore((s) => s.currentFiles)
   const currentFolderId = useFileStore((s) => s.currentFolderId)
@@ -70,8 +70,8 @@ export default function FileList() {
 
   const handleRowClick = useCallback(
     (record: FileItem) => {
-      if (record.type === 'directory') {
-        const newPath = [...currentPath, { id: record.id, name: record.name, type: 'directory' as const, size: 0, mimeType: '', updatedAt: '', createdAt: '', parentId: currentFolderId }]
+      if (record.isFolder) {
+        const newPath = [...currentPath, { id: record.id, name: record.name, isFolder: true, sizeBytes: 0, mimeType: '', updatedAt: '', createdAt: '', parentId: currentFolderId ?? undefined, userId: '' }]
         setCurrentFolderId(record.id)
         setCurrentPath(newPath)
         fetchFiles(record.id)
@@ -147,7 +147,7 @@ export default function FileList() {
 
   const rowSelection = {
     selectedRowKeys: selectedFileIds,
-    onChange: (keys: React.Key[]) => setSelectedFileIds(keys as number[]),
+    onChange: (keys: React.Key[]) => setSelectedFileIds(keys as string[]),
   }
 
   const contextMenuItems = (record: FileItem) => [
@@ -155,7 +155,7 @@ export default function FileList() {
       key: 'download',
       label: '??',
       icon: <DownloadOutlined />,
-      disabled: record.type === 'directory',
+      disabled: record.isFolder,
       onClick: () => handleDownload(record),
     },
     {
@@ -183,7 +183,7 @@ export default function FileList() {
           className="cursor-pointer hover:text-blue-500 flex items-center gap-2"
           onClick={() => handleRowClick(record)}
         >
-          {record.type === 'directory' ? (
+          {record.isFolder ? (
             <FolderOutlined className="text-yellow-500 text-lg" />
           ) : (
             getFileIcon(name, record.mimeType)
@@ -194,18 +194,18 @@ export default function FileList() {
     },
     {
       title: '??',
-      dataIndex: 'size',
-      key: 'size',
+      dataIndex: 'sizeBytes',
+      key: 'sizeBytes',
       width: 120,
-      render: (size: number, record: FileItem) =>
-        record.type === 'directory' ? '-' : formatFileSize(size),
+      render: (sizeBytes: number, record: FileItem) =>
+        record.isFolder ? '-' : formatFileSize(sizeBytes),
     },
     {
       title: '??',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'isFolder',
+      key: 'isFolder',
       width: 100,
-      render: (type: string) => (type === 'directory' ? '???' : '??'),
+      render: (isFolder: boolean) => (isFolder ? '???' : '??'),
     },
     {
       title: '????',
@@ -220,7 +220,7 @@ export default function FileList() {
       width: 160,
       render: (_: unknown, record: FileItem) => (
         <Space>
-          {record.type === 'file' && (
+          {!record.isFolder && (
             <Button
               type="link"
               size="small"
@@ -291,7 +291,13 @@ export default function FileList() {
               emptyText: '??????',
             }}
             onRow={(record) => ({
-              onDoubleClick: () => handleRowClick(record),
+              onDoubleClick: () => {
+                if (record.isFolder) {
+                  handleRowClick(record)
+                } else if (onFileDoubleClick) {
+                  onFileDoubleClick(record)
+                }
+              },
               onContextMenu: () => {},
             })}
           />

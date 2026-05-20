@@ -1,31 +1,29 @@
 import client from './client'
 
 export interface FileItem {
-  id: number
+  id: string
   name: string
-  type: 'file' | 'directory'
-  size: number
-  mimeType: string
-  updatedAt: string
+  isFolder: boolean
+  mimeType?: string
+  sizeBytes: number
+  parentId?: string | null
+  userId: string
+  storagePath?: string
   createdAt: string
-  parentId: number | null
-  children?: FileItem[]
+  updatedAt: string
 }
 
 export interface FileTreeItem {
-  id: number
+  id: string
   name: string
-  type: 'file' | 'directory'
+  parentId: string | null
+  isFolder: boolean
   children?: FileTreeItem[]
 }
 
-export interface SearchResult {
-  files: FileItem[]
-  total: number
-}
-
-export async function getFiles(parentId?: number): Promise<FileItem[]> {
-  const params = parentId !== undefined ? { parentId } : {}
+export async function getFiles(parentId?: string): Promise<FileItem[]> {
+  const params: Record<string, unknown> = { pageSize: 0 }
+  if (parentId) params.parentId = parentId
   const response = await client.get<FileItem[]>('/files', { params })
   return response.data
 }
@@ -35,49 +33,45 @@ export async function getFileTree(): Promise<FileTreeItem[]> {
   return response.data
 }
 
-export async function searchFiles(query: string): Promise<SearchResult> {
-  const response = await client.get<SearchResult>('/files/search', {
+export async function searchFiles(query: string): Promise<FileItem[]> {
+  const response = await client.get<FileItem[]>('/files/search', {
     params: { q: query },
   })
   return response.data
 }
 
-export async function createDirectory(
+export async function createFolder(
   name: string,
-  parentId?: number,
+  parentId?: string,
 ): Promise<FileItem> {
-  const response = await client.post<FileItem>('/files/directory', {
+  const response = await client.post<FileItem>('/files/folder', {
     name,
-    parentId,
+    parentId: parentId || null,
   })
   return response.data
 }
 
 export async function renameFile(
-  id: number,
+  id: string,
   name: string,
 ): Promise<FileItem> {
-  const response = await client.put<FileItem>(`/files/${id}/rename`, { name })
+  const response = await client.put<FileItem>(`/files/${id}`, { name })
   return response.data
 }
 
-export async function deleteFile(id: number): Promise<void> {
-  await client.delete(`/files/${id}`)
-}
-
-export async function deleteFiles(ids: number[]): Promise<void> {
-  await client.post('/files/batch-delete', { ids })
+export async function deleteFiles(ids: string[]): Promise<void> {
+  await client.delete('/files', { data: { ids } })
 }
 
 export async function uploadFile(
   file: File,
-  parentId?: number,
+  parentId?: string,
   onProgress?: (percent: number) => void,
 ): Promise<FileItem> {
   const formData = new FormData()
   formData.append('file', file)
   if (parentId !== undefined) {
-    formData.append('parentId', String(parentId))
+    formData.append('parentId', parentId)
   }
 
   const response = await client.post<FileItem>('/files/upload', formData, {
@@ -94,6 +88,6 @@ export async function uploadFile(
   return response.data
 }
 
-export async function getDownloadUrl(id: number): Promise<string> {
-  return `${client.defaults.baseURL}/files/${id}/download`
+export function getDownloadUrl(id: string): string {
+  return `/api/files/${id}/download`
 }

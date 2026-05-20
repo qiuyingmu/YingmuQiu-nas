@@ -44,8 +44,11 @@ public interface FileRepository extends JpaRepository<FileEntity, UUID> {
            "AND f.isFolder = true")
     List<FileEntity> findAllFoldersByUserId(@Param("userId") UUID userId);
 
-    // Find children for cascade delete
-    List<FileEntity> findByParentIdAndIsDeletedFalse(UUID parentId);
+    // Find children for cascade delete (user-isolated)
+    List<FileEntity> findByParentIdAndUserIdAndIsDeletedFalse(UUID parentId, UUID userId);
+
+    // Find all non-deleted files for a user (media use)
+    List<FileEntity> findByUserIdAndIsDeletedFalse(UUID userId);
 
     // Count children
     long countByParentIdAndIsDeletedFalse(UUID parentId);

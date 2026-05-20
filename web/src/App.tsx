@@ -3,6 +3,8 @@ import { useAuthStore } from './stores/authStore'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import FileBrowser from './pages/FileBrowser'
+import MediaLibrary from './pages/MediaLibrary'
+import PhotoWall from './pages/PhotoWall'
 import AuthLayout from './components/AuthLayout'
 import MainLayout from './components/MainLayout'
 import { useEffect, type ReactNode } from 'react'
@@ -57,6 +59,8 @@ export default function App() {
       >
         <Route path="/files" element={<FileBrowser />} />
         <Route path="/files/:id" element={<FileBrowser />} />
+        <Route path="/media" element={<MediaLibrary />} />
+        <Route path="/photos" element={<PhotoWall />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/files" replace />} />

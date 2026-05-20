@@ -43,8 +43,8 @@ export default function FileTree() {
         return {
           key: String(node.id),
           title: node.name,
-          icon: node.type === 'directory' ? <FolderOutlined /> : <FileOutlined />,
-          isLeaf: node.type !== 'directory' || !node.children?.length,
+          icon: node.isFolder ? <FolderOutlined /> : <FileOutlined />,
+          isLeaf: !node.isFolder || !node.children?.length,
           children: node.children ? convertToTreeData(node.children, path) : undefined,
           _path: path,
         }
@@ -73,7 +73,7 @@ export default function FileTree() {
 
   const handleSelect = (_: React.Key[], info: { node: DataNode }) => {
     const node = info.node as DataNode & { _path?: any[] }
-    const nodeId = Number(node.key)
+    const nodeId = String(node.key)
     if (node._path) {
       setCurrentPath(node._path)
     }
@@ -86,7 +86,7 @@ export default function FileTree() {
   const handleMenuClick = (action: string) => {
     if (!contextNode) return
 
-    const nodeId = Number(contextNode.key)
+    const nodeId = String(contextNode.key)
 
     switch (action) {
       case 'create-folder': {
@@ -122,7 +122,7 @@ export default function FileTree() {
 
   const handleCreateFolder = async () => {
     if (!modalValue.trim()) return
-    const parentId = contextNode ? Number(contextNode.key) : undefined
+    const parentId = contextNode ? String(contextNode.key) : undefined
     try {
       await createFolder(modalValue.trim(), parentId)
       message.success('???????')
@@ -135,7 +135,7 @@ export default function FileTree() {
   const handleRename = async () => {
     if (!modalValue.trim() || !contextNode) return
     try {
-      await rename(Number(contextNode.key), modalValue.trim())
+      await rename(String(contextNode.key), modalValue.trim())
       message.success('?????')
       setRenameModalOpen(false)
     } catch {

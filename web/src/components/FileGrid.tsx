@@ -15,15 +15,15 @@ import { useNavigate } from 'react-router-dom'
 import { useFileStore } from '../stores/fileStore'
 import type { FileItem } from '../api/files'
 
-function getFileIcon(name: string, mimeType: string) {
+function getFileIcon(name: string, mimeType?: string) {
   const ext = name.split('.').pop()?.toLowerCase()
-  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(ext || '')) {
+  if (mimeType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(ext || '')) {
     return <FileImageOutlined style={{ fontSize: 48, color: '#52c41a' }} />
   }
-  if (mimeType.startsWith('video/') || ['mp4', 'avi', 'mov', 'mkv', 'wmv'].includes(ext || '')) {
+  if (mimeType?.startsWith('video/') || ['mp4', 'avi', 'mov', 'mkv', 'wmv'].includes(ext || '')) {
     return <VideoCameraOutlined style={{ fontSize: 48, color: '#722ed1' }} />
   }
-  if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'flac', 'aac'].includes(ext || '')) {
+  if (mimeType?.startsWith('audio/') || ['mp3', 'wav', 'flac', 'aac'].includes(ext || '')) {
     return <AudioOutlined style={{ fontSize: 48, color: '#eb2f96' }} />
   }
   if (['pdf'].includes(ext || '')) {
@@ -41,7 +41,7 @@ function getFileIcon(name: string, mimeType: string) {
   return <FileOutlined style={{ fontSize: 48, color: '#8c8c8c' }} />
 }
 
-export default function FileGrid() {
+export default function FileGrid({ onFileDoubleClick }: { onFileDoubleClick?: (file: FileItem) => void }) {
   const navigate = useNavigate()
   const currentFiles = useFileStore((s) => s.currentFiles)
   const currentFolderId = useFileStore((s) => s.currentFolderId)
@@ -54,18 +54,19 @@ export default function FileGrid() {
 
   const handleFileClick = useCallback(
     (record: FileItem) => {
-      if (record.type === 'directory') {
+      if (record.isFolder) {
         const newPath = [
           ...currentPath,
           {
             id: record.id,
             name: record.name,
-            type: 'directory' as const,
-            size: 0,
+            isFolder: true,
+            sizeBytes: 0,
             mimeType: '',
             updatedAt: '',
             createdAt: '',
-            parentId: currentFolderId,
+            parentId: currentFolderId ?? undefined,
+            userId: '',
           },
         ]
         setCurrentFolderId(record.id)
@@ -77,7 +78,7 @@ export default function FileGrid() {
     [currentPath, currentFolderId, setCurrentFolderId, setCurrentPath, fetchFiles, navigate],
   )
 
-  const handleSelect = (id: number) => {
+  const handleSelect = (id: string) => {
     const newSelected = selectedFileIds.includes(id)
       ? selectedFileIds.filter((fid) => fid !== id)
       : [...selectedFileIds, id]
@@ -97,6 +98,11 @@ export default function FileGrid() {
                 isSelected ? 'ring-2 ring-blue-500' : ''
               }`}
               onClick={() => handleFileClick(file)}
+              onDoubleClick={() => {
+                if (!file.isFolder && onFileDoubleClick) {
+                  onFileDoubleClick(file)
+                }
+              }}
               bodyStyle={{ padding: 16, textAlign: 'center' }}
             >
               <div className="relative">
@@ -110,7 +116,7 @@ export default function FileGrid() {
                   <Checkbox checked={isSelected} />
                 </div>
                 <div className="flex flex-col items-center gap-2 py-2">
-                  {file.type === 'directory' ? (
+                  {file.isFolder ? (
                     <FolderOutlined style={{ fontSize: 48, color: '#faad14' }} />
                   ) : (
                     getFileIcon(file.name, file.mimeType)

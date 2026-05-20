@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { Button, Space, message } from 'antd'
 import {
@@ -12,6 +12,10 @@ import FileList from '../components/FileList'
 import FileGrid from '../components/FileGrid'
 import FileUploader from '../components/FileUploader'
 import EmptyState from '../components/EmptyState'
+import ImagePreview from '../components/ImagePreview'
+import VideoPlayer from '../components/VideoPlayer'
+import AudioPlayer from '../components/AudioPlayer'
+import type { FileItem } from '../api/files'
 
 interface OutletContext {
   uploadVisible: boolean
@@ -34,8 +38,48 @@ export default function FileBrowser() {
   const loading = useFileStore((s) => s.loading)
   const searchQuery = useFileStore((s) => s.searchQuery)
 
+  // Media preview state
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false)
+  const [imagePreviewIndex, setImagePreviewIndex] = useState(0)
+  const [videoPreviewFile, setVideoPreviewFile] = useState<FileItem | null>(null)
+  const [audioPreviewFile, setAudioPreviewFile] = useState<FileItem | null>(null)
+
+  // Determine if a file is a media file and get its type
+  const getMediaType = (file: FileItem): 'image' | 'video' | 'audio' | null => {
+    const name = file.name.toLowerCase()
+    if (file.mimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(name)) {
+      return 'image'
+    }
+    if (file.mimeType?.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(name)) {
+      return 'video'
+    }
+    if (file.mimeType?.startsWith('audio/') || /\.(mp3|wav|flac|aac|ogg)$/i.test(name)) {
+      return 'audio'
+    }
+    return null
+  }
+
+  // Build image list for prev/next navigation
+  const imageFiles = currentFiles.filter((f) => getMediaType(f) === 'image')
+
+  const handleFileDoubleClick = useCallback(
+    (file: FileItem) => {
+      const type = getMediaType(file)
+      if (type === 'image') {
+        const idx = imageFiles.findIndex((f) => f.id === file.id)
+        setImagePreviewIndex(idx >= 0 ? idx : 0)
+        setImagePreviewOpen(true)
+      } else if (type === 'video') {
+        setVideoPreviewFile(file)
+      } else if (type === 'audio') {
+        setAudioPreviewFile(file)
+      }
+    },
+    [imageFiles],
+  )
+
   const loadFiles = useCallback(
-    async (folderId?: number) => {
+    async (folderId?: string) => {
       try {
         await fetchFiles(folderId)
         await fetchFileTree()
@@ -47,9 +91,9 @@ export default function FileBrowser() {
   )
 
   useEffect(() => {
-    const folderId = id ? Number(id) : undefined
+    const folderId = id || undefined
 
-    if (folderId && !isNaN(folderId)) {
+    if (folderId) {
       setCurrentFolderId(folderId)
     } else if (!id) {
       setCurrentFolderId(null)
@@ -57,12 +101,12 @@ export default function FileBrowser() {
     }
 
     setSelectedFileIds([])
-    loadFiles(folderId && !isNaN(folderId) ? folderId : undefined)
+    loadFiles(folderId)
   }, [id, setCurrentFolderId, setCurrentPath, setSelectedFileIds, loadFiles])
 
   const handleRefresh = () => {
-    const folderId = id ? Number(id) : undefined
-    loadFiles(folderId && !isNaN(folderId) ? folderId : undefined)
+    const folderId = id || undefined
+    loadFiles(folderId)
   }
 
   return (
@@ -98,13 +142,51 @@ export default function FileBrowser() {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {viewMode === 'list' ? <FileList /> : <FileGrid />}
+        {viewMode === 'list' ? (
+          <FileList onFileDoubleClick={handleFileDoubleClick} />
+        ) : (
+          <FileGrid onFileDoubleClick={handleFileDoubleClick} />
+        )}
       </div>
 
       <FileUploader
         visible={uploadVisible}
         onClose={() => setUploadVisible(false)}
       />
+
+      {/* Image Preview */}
+      {imageFiles.length > 0 && (
+        <ImagePreview
+          open={imagePreviewOpen}
+          items={imageFiles.map((f) => ({
+            fileId: String(f.id),
+            fileName: f.name,
+          }))}
+          currentIndex={imagePreviewIndex}
+          onClose={() => setImagePreviewOpen(false)}
+          onIndexChange={setImagePreviewIndex}
+        />
+      )}
+
+      {/* Video Player */}
+      {videoPreviewFile && (
+        <VideoPlayer
+          open={true}
+          fileId={String(videoPreviewFile.id)}
+          fileName={videoPreviewFile.name}
+          onClose={() => setVideoPreviewFile(null)}
+        />
+      )}
+
+      {/* Audio Player */}
+      {audioPreviewFile && (
+        <AudioPlayer
+          open={true}
+          fileId={String(audioPreviewFile.id)}
+          fileName={audioPreviewFile.name}
+          onClose={() => setAudioPreviewFile(null)}
+        />
+      )}
     </div>
   )
 }

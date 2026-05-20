@@ -2,6 +2,7 @@ package com.nas.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -10,6 +11,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "???????")
     @Size(min = 3, max = 50, message = "???????3-50?????")
+    @Pattern(regexp = "^[a-zA-Z0-9_-]{3,50}$", message = "????????????????????")
     private String username;
 
     @NotBlank(message = "??????")

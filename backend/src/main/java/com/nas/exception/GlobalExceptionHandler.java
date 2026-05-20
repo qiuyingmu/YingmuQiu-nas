@@ -36,8 +36,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleUserNotFound(UsernameNotFoundException ex) {
+        log.debug("User not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(404, ex.getMessage()));
+                .body(ApiResponse.error(404, "?????"));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -54,8 +55,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.debug("Invalid argument: {}", ex.getMessage());
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error(400, ex.getMessage()));
+                .body(ApiResponse.error(400, "??????"));
     }
 
     @ExceptionHandler(Exception.class)

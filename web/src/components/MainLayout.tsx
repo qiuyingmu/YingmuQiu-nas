@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Layout, Menu, Dropdown, Avatar, Button, Space, Typography } from 'antd'
 import {
   MenuFoldOutlined,
@@ -7,6 +7,9 @@ import {
   UserOutlined,
   LogoutOutlined,
   UploadOutlined,
+  FolderOutlined,
+  PictureOutlined,
+  PlaySquareOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '../stores/authStore'
 import FileTree from './FileTree'
@@ -20,7 +23,29 @@ export default function MainLayout() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
+  const location = useLocation()
   const [uploadVisible, setUploadVisible] = useState(false)
+
+  // Sidebar nav items
+  const navItems = [
+    {
+      key: '/files',
+      icon: <FolderOutlined />,
+      label: '????',
+    },
+    {
+      key: '/photos',
+      icon: <PictureOutlined />,
+      label: '???',
+    },
+    {
+      key: '/media',
+      icon: <PlaySquareOutlined />,
+      label: '???',
+    },
+  ]
+
+  const currentNavKey = '/' + location.pathname.split('/')[1]
 
   const handleLogout = () => {
     logout()
@@ -65,6 +90,15 @@ export default function MainLayout() {
             </Text>
           )}
         </div>
+
+        <Menu
+          mode="inline"
+          selectedKeys={[currentNavKey]}
+          items={navItems}
+          onClick={({ key }) => navigate(key)}
+          className="border-r-0"
+        />
+
         <div className="p-2">
           <FileTree />
         </div>
