@@ -94,23 +94,31 @@ public class FileChangeHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        URI uri = session.getUri();
-        if (uri != null && uri.getQuery() != null) {
-            String query = uri.getQuery();
-            for (String param : query.split("&")) {
-                String[] pair = param.split("=", 2);
-                if (pair.length == 2 && "userId".equals(pair[0])) {
-                    UUID userId = UUID.fromString(pair[1]);
-                    List<WebSocketSession> sessions = userSessions.get(userId);
-                    if (sessions != null) {
-                        sessions.remove(session);
-                        if (sessions.isEmpty()) {
-                            userSessions.remove(userId);
+        try {
+            URI uri = session.getUri();
+            if (uri != null && uri.getQuery() != null) {
+                String query = uri.getQuery();
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=", 2);
+                    if (pair.length == 2 && "userId".equals(pair[0])) {
+                        try {
+                            UUID userId = UUID.fromString(pair[1]);
+                            List<WebSocketSession> sessions = userSessions.get(userId);
+                            if (sessions != null) {
+                                sessions.remove(session);
+                                if (sessions.isEmpty()) {
+                                    userSessions.remove(userId);
+                                }
+                            }
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Invalid userId in WebSocket close: {}", pair[1]);
                         }
+                        break;
                     }
-                    break;
                 }
             }
+        } catch (Exception e) {
+            log.warn("Error closing WebSocket session: {}", session.getId(), e);
         }
         log.info("WebSocket disconnected: sessionId={}", session.getId());
     }
