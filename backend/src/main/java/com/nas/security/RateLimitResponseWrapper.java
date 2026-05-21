@@ -32,12 +32,6 @@ class RateLimitResponseWrapper extends HttpServletResponseWrapper {
         super.sendError(status);
     }
 
-    @Override
-    public void setStatus(int status, String msg) {
-        this.httpStatus = status;
-        super.setStatus(status, msg);
-    }
-
     public int getStatus() {
         return httpStatus;
     }
