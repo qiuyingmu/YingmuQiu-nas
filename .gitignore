@@ -1,0 +1,43 @@
+# Build
+backend/target/
+web/dist/
+web/node_modules/
+mobile/node_modules/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# NAS Data (runtime)
+nas-data/
+backend/nas-data/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+!.env.example
+
+# Maven
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Expo
+mobile/.expo/
+mobile/dist/
+mobile/android/
+mobile/ios/

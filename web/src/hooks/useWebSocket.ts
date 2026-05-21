@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export function useWebSocket(userId: number | null, token: string | null) {
+export function useWebSocket(userId: string | null, token: string | null) {
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {

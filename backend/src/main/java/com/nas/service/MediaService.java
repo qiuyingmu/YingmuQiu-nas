@@ -108,60 +108,55 @@ public class MediaService {
     }
 
     /**
-     * Get paginated media list by user and type.
+     * Get paginated media list by user and type — database-level filtering & paging.
      */
     public Page<MediaResponse> getMediaList(UUID userId, String type, int page, int size) {
-        List<FileEntity> userFiles = fileRepository.findByUserIdAndIsDeletedFalse(userId);
+        String mediaType = (type == null || type.isEmpty()) ? null : type;
 
-        // Build a map: fileId -> FileEntity for fast lookup
-        Map<UUID, FileEntity> fileMap = userFiles.stream()
-                .filter(f -> !f.isFolder())
+        Page<MediaMeta> pageResult = mediaMetaRepository.findByUserIdAndTypePaged(
+                userId, mediaType,
+                PageRequest.of(page, size, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
+
+        // Build file lookup for the current page only
+        if (pageResult.isEmpty()) {
+            return Page.empty();
+        }
+
+        List<UUID> fileIds = pageResult.getContent().stream()
+                .map(MediaMeta::getFileId)
+                .collect(Collectors.toList());
+        List<FileEntity> files = fileRepository.findAllById(fileIds);
+        Map<UUID, FileEntity> fileMap = files.stream()
                 .collect(Collectors.toMap(FileEntity::getId, f -> f, (a, b) -> a));
 
-        if (fileMap.isEmpty()) {
-            return Page.empty();
-        }
-
-        // Get all media meta entries matching the type filter
-        List<MediaMeta> allMetas = mediaMetaRepository.findAll().stream()
-                .filter(m -> fileMap.containsKey(m.getFileId()))
-                .filter(m -> type == null || type.isEmpty() || type.equals(m.getMediaType()))
-                .collect(Collectors.toList());
-
-        // Sort by createdAt descending
-        allMetas.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
-
-        // Manual pagination
-        int start = page * size;
-        if (start >= allMetas.size()) {
-            return Page.empty();
-        }
-        int end = Math.min(start + size, allMetas.size());
-        List<MediaMeta> pageContent = allMetas.subList(start, end);
-
-        List<MediaResponse> responses = pageContent.stream()
+        List<MediaResponse> responses = pageResult.getContent().stream()
                 .map(meta -> buildResponse(meta, fileMap.get(meta.getFileId())))
                 .collect(Collectors.toList());
 
         return new org.springframework.data.domain.PageImpl<>(responses,
-                PageRequest.of(page, size), allMetas.size());
+                pageResult.getPageable(), pageResult.getTotalElements());
     }
 
     /**
-     * Get media grouped by year-month for timeline view.
+     * Get media grouped by year-month for timeline view — database-level filtering.
      */
     public Map<String, List<MediaResponse>> getMediaTimeline(UUID userId, String type, int year, int month) {
         Map<String, List<MediaResponse>> timeline = new LinkedHashMap<>();
 
-        List<FileEntity> userFiles = fileRepository.findByUserIdAndIsDeletedFalse(userId);
-        Map<UUID, FileEntity> fileMap = userFiles.stream()
-                .filter(f -> !f.isFolder())
-                .collect(Collectors.toMap(FileEntity::getId, f -> f, (a, b) -> a));
+        String mediaType = (type == null || type.isEmpty()) ? null : type;
+        List<MediaMeta> metas = mediaMetaRepository.findAllByUserIdAndType(userId, mediaType);
 
-        List<MediaMeta> metas = mediaMetaRepository.findAll().stream()
-                .filter(m -> fileMap.containsKey(m.getFileId()))
-                .filter(m -> type == null || type.isEmpty() || type.equals(m.getMediaType()))
+        // Build file lookup for timeline items
+        if (metas.isEmpty()) return timeline;
+
+        List<UUID> fileIds = metas.stream()
+                .map(MediaMeta::getFileId)
+                .distinct()
                 .collect(Collectors.toList());
+        List<FileEntity> files = fileRepository.findAllById(fileIds);
+        Map<UUID, FileEntity> fileMap = files.stream()
+                .collect(Collectors.toMap(FileEntity::getId, f -> f, (a, b) -> a));
 
         for (MediaMeta meta : metas) {
             LocalDateTime dt = meta.getTakenAt() != null ? meta.getTakenAt() : meta.getCreatedAt();
@@ -193,17 +188,25 @@ public class MediaService {
     }
 
     /**
-     * Get all media entries that have GPS coordinates.
+     * Get all media entries that have GPS coordinates — database-level filtering.
      */
     public List<MediaResponse> getMediaLocations(UUID userId) {
-        List<FileEntity> userFiles = fileRepository.findByUserIdAndIsDeletedFalse(userId);
-        Map<UUID, FileEntity> fileMap = userFiles.stream()
-                .filter(f -> !f.isFolder())
+        List<MediaMeta> metas = mediaMetaRepository.findAllByUserIdAndType(userId, null);
+
+        List<MediaMeta> gpsMetas = metas.stream()
+                .filter(m -> m.getGpsLat() != null && m.getGpsLng() != null)
+                .collect(Collectors.toList());
+
+        if (gpsMetas.isEmpty()) return List.of();
+
+        List<UUID> fileIds = gpsMetas.stream()
+                .map(MediaMeta::getFileId)
+                .collect(Collectors.toList());
+        List<FileEntity> files = fileRepository.findAllById(fileIds);
+        Map<UUID, FileEntity> fileMap = files.stream()
                 .collect(Collectors.toMap(FileEntity::getId, f -> f, (a, b) -> a));
 
-        return mediaMetaRepository.findAll().stream()
-                .filter(m -> fileMap.containsKey(m.getFileId()))
-                .filter(m -> m.getGpsLat() != null && m.getGpsLng() != null)
+        return gpsMetas.stream()
                 .map(m -> buildResponse(m, fileMap.get(m.getFileId())))
                 .collect(Collectors.toList());
     }

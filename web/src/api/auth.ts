@@ -14,9 +14,12 @@ export interface RegisterRequest {
 export interface AuthResponse {
   token: string
   user: {
-    id: number
+    id: string
     username: string
     email: string
+    displayName?: string
+    storageQuota?: number
+    storageUsed?: number
   }
 }
 

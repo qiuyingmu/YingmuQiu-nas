@@ -3,9 +3,12 @@ import { persist } from 'zustand/middleware'
 import { login as loginApi, register as registerApi, getCurrentUser, type LoginRequest, type RegisterRequest } from '../api/auth'
 
 interface User {
-  id: number
+  id: string
   username: string
   email: string
+  displayName?: string
+  storageQuota?: number
+  storageUsed?: number
 }
 
 interface AuthState {
