@@ -21,7 +21,8 @@ public interface FileRepository extends JpaRepository<FileEntity, UUID> {
 
     Optional<FileEntity> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
 
-    @Query("SELECT f FROM FileEntity f WHERE f.userId = :userId AND f.parentId = :parentId " +
+    @Query("SELECT f FROM FileEntity f WHERE f.userId = :userId " +
+           "AND ((:parentId IS NULL AND f.parentId IS NULL) OR (f.parentId = :parentId)) " +
            "AND f.name = :name AND f.isDeleted = false")
     Optional<FileEntity> findByUserIdAndParentIdAndNameAndIsDeletedFalse(
             @Param("userId") UUID userId,
