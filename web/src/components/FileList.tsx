@@ -15,6 +15,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   ScissorOutlined,
+  ShareAltOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useFileStore } from '../stores/fileStore'
@@ -49,7 +50,7 @@ function getFileIcon(name: string, mimeType?: string) {
   return <FileOutlined className="text-gray-500 text-lg" />
 }
 
-export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (file: FileItem) => void }) {
+export default function FileList({ onFileDoubleClick, onShare }: { onFileDoubleClick?: (file: FileItem) => void; onShare?: (file: FileItem) => void }) {
   const navigate = useNavigate()
   const currentFiles = useFileStore((s) => s.currentFiles)
   const currentFolderId = useFileStore((s) => s.currentFolderId)
@@ -86,23 +87,23 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
       const url = await getDownloadUrl(record.id)
       window.open(url, '_blank')
     } catch {
-      message.error('????')
+      message.error('下载失败')
     }
   }
 
   const handleDelete = (record: FileItem) => {
     Modal.confirm({
-      title: '????',
-      content: `?????"${record.name}"??`,
-      okText: '??',
+      title: '确认删除',
+      content: `确定要删除"${record.name}"吗？`,
+      okText: '删除',
       okType: 'danger',
-      cancelText: '??',
+      cancelText: '取消',
       onOk: async () => {
         try {
           await remove(record.id)
-          message.success('????')
+          message.success('删除成功')
         } catch {
-          message.error('????')
+          message.error('删除失败')
         }
       },
     })
@@ -118,28 +119,28 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
     if (!renameValue.trim() || !renameTarget) return
     try {
       await rename(renameTarget.id, renameValue.trim())
-      message.success('?????')
+      message.success('重命名成功')
       setRenameModalOpen(false)
     } catch {
-      message.error('?????')
+      message.error('重命名失败')
     }
   }
 
   const handleBatchDelete = () => {
     if (selectedFileIds.length === 0) return
     Modal.confirm({
-      title: '????',
-      content: `???????? ${selectedFileIds.length} ???/?????`,
-      okText: '??',
+      title: '批量删除',
+      content: `确定要删除选中的 ${selectedFileIds.length} 个文件/文件夹吗？`,
+      okText: '删除',
       okType: 'danger',
-      cancelText: '??',
+      cancelText: '取消',
       onOk: async () => {
         try {
           await batchRemove(selectedFileIds)
           setSelectedFileIds([])
-          message.success('??????')
+          message.success('批量删除成功')
         } catch {
-          message.error('??????')
+          message.error('批量删除失败')
         }
       },
     })
@@ -153,20 +154,26 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
   const contextMenuItems = (record: FileItem) => [
     {
       key: 'download',
-      label: '??',
+      label: '下载',
       icon: <DownloadOutlined />,
       disabled: record.isFolder,
       onClick: () => handleDownload(record),
     },
     {
+      key: 'share',
+      label: '分享',
+      icon: <ShareAltOutlined />,
+      onClick: () => onShare?.(record),
+    },
+    {
       key: 'rename',
-      label: '???',
+      label: '重命名',
       icon: <EditOutlined />,
       onClick: () => handleRename(record),
     },
     {
       key: 'delete',
-      label: '??',
+      label: '删除',
       icon: <DeleteOutlined />,
       danger: true,
       onClick: () => handleDelete(record),
@@ -175,7 +182,7 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
 
   const columns: ColumnsType<FileItem> = [
     {
-      title: '??',
+      title: '名称',
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record: FileItem) => (
@@ -193,7 +200,7 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
       ),
     },
     {
-      title: '??',
+      title: '大小',
       dataIndex: 'sizeBytes',
       key: 'sizeBytes',
       width: 120,
@@ -201,23 +208,23 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
         record.isFolder ? '-' : formatFileSize(sizeBytes),
     },
     {
-      title: '??',
+      title: '类型',
       dataIndex: 'isFolder',
       key: 'isFolder',
       width: 100,
-      render: (isFolder: boolean) => (isFolder ? '???' : '??'),
+      render: (isFolder: boolean) => (isFolder ? '文件夹' : '文件'),
     },
     {
-      title: '????',
+      title: '修改日期',
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       width: 180,
       render: (date: string) => formatDateTime(date),
     },
     {
-      title: '??',
+      title: '操作',
       key: 'actions',
-      width: 160,
+      width: 220,
       render: (_: unknown, record: FileItem) => (
         <Space>
           {!record.isFolder && (
@@ -230,9 +237,20 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
                 handleDownload(record)
               }}
             >
-              ??
+              下载
             </Button>
           )}
+          <Button
+            type="link"
+            size="small"
+            icon={<ShareAltOutlined />}
+            onClick={(e) => {
+              e.stopPropagation()
+              onShare?.(record)
+            }}
+          >
+            分享
+          </Button>
           <Button
             type="link"
             size="small"
@@ -243,7 +261,7 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
               handleDelete(record)
             }}
           >
-            ??
+            删除
           </Button>
         </Space>
       ),
@@ -255,11 +273,11 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
       {selectedFileIds.length > 0 && (
         <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
           <span className="text-sm text-blue-600">
-            ??? {selectedFileIds.length} ?
+            已选择 {selectedFileIds.length} 项
           </span>
           <Space>
             <Button size="small" onClick={() => setSelectedFileIds([])}>
-              ????
+              取消选择
             </Button>
             <Button
               size="small"
@@ -267,7 +285,7 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
               icon={<DeleteOutlined />}
               onClick={handleBatchDelete}
             >
-              ????
+              批量删除
             </Button>
           </Space>
         </div>
@@ -288,7 +306,7 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
             size="small"
             scroll={{ y: 'calc(100vh - 280px)' }}
             locale={{
-              emptyText: '??????',
+              emptyText: '此文件夹为空',
             }}
             onRow={(record) => ({
               onDoubleClick: () => {
@@ -305,12 +323,12 @@ export default function FileList({ onFileDoubleClick }: { onFileDoubleClick?: (f
       </div>
 
       <Modal
-        title="???"
+        title="重命名"
         open={renameModalOpen}
         onOk={confirmRename}
         onCancel={() => setRenameModalOpen(false)}
-        okText="??"
-        cancelText="??"
+        okText="确认"
+        cancelText="取消"
       >
         <Input
           value={renameValue}

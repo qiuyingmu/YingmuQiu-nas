@@ -7,6 +7,8 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons'
 import { useFileStore } from '../stores/fileStore'
+import { useAuthStore } from '../stores/authStore'
+import { useWebSocket } from '../hooks/useWebSocket'
 import BreadcrumbNav from '../components/BreadcrumbNav'
 import FileList from '../components/FileList'
 import FileGrid from '../components/FileGrid'
@@ -15,6 +17,7 @@ import EmptyState from '../components/EmptyState'
 import ImagePreview from '../components/ImagePreview'
 import VideoPlayer from '../components/VideoPlayer'
 import AudioPlayer from '../components/AudioPlayer'
+import ShareDialog from '../components/ShareDialog'
 import type { FileItem } from '../api/files'
 
 interface OutletContext {
@@ -37,6 +40,15 @@ export default function FileBrowser() {
   const currentFiles = useFileStore((s) => s.currentFiles)
   const loading = useFileStore((s) => s.loading)
   const searchQuery = useFileStore((s) => s.searchQuery)
+
+  // Auth & WebSocket
+  const user = useAuthStore((s) => s.user)
+  const token = useAuthStore((s) => s.token)
+  useWebSocket(user?.id ?? null, token)
+
+  // Share dialog state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [shareFile, setShareFile] = useState<FileItem | null>(null)
 
   // Media preview state
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false)
@@ -84,7 +96,7 @@ export default function FileBrowser() {
         await fetchFiles(folderId)
         await fetchFileTree()
       } catch {
-        message.error('????????')
+        message.error('获取文件列表失败')
       }
     },
     [fetchFiles, fetchFileTree],
@@ -103,6 +115,21 @@ export default function FileBrowser() {
     setSelectedFileIds([])
     loadFiles(folderId)
   }, [id, setCurrentFolderId, setCurrentPath, setSelectedFileIds, loadFiles])
+
+  // WebSocket file-change 事件监听: 自动刷新文件列表
+  useEffect(() => {
+    const handler = () => {
+      const folderId = id || undefined
+      loadFiles(folderId)
+    }
+    window.addEventListener('file-change', handler)
+    return () => window.removeEventListener('file-change', handler)
+  }, [id, loadFiles])
+
+  const handleShare = useCallback((file: FileItem) => {
+    setShareFile(file)
+    setShareDialogOpen(true)
+  }, [])
 
   const handleRefresh = () => {
     const folderId = id || undefined
@@ -136,16 +163,16 @@ export default function FileBrowser() {
         </Space>
         <span className="text-xs text-gray-400">
           {currentFiles.length > 0
-            ? `? ${currentFiles.length} ?`
+            ? `共 ${currentFiles.length} 项`
             : ''}
         </span>
       </div>
 
       <div className="flex-1 overflow-hidden">
         {viewMode === 'list' ? (
-          <FileList onFileDoubleClick={handleFileDoubleClick} />
+          <FileList onFileDoubleClick={handleFileDoubleClick} onShare={handleShare} />
         ) : (
-          <FileGrid onFileDoubleClick={handleFileDoubleClick} />
+          <FileGrid onFileDoubleClick={handleFileDoubleClick} onShare={handleShare} />
         )}
       </div>
 
@@ -185,6 +212,20 @@ export default function FileBrowser() {
           fileId={String(audioPreviewFile.id)}
           fileName={audioPreviewFile.name}
           onClose={() => setAudioPreviewFile(null)}
+        />
+      )}
+
+      {/* Share Dialog */}
+      {shareFile && (
+        <ShareDialog
+          open={shareDialogOpen}
+          fileId={shareFile.id}
+          fileName={shareFile.name}
+          isFolder={shareFile.isFolder}
+          onClose={() => {
+            setShareDialogOpen(false)
+            setShareFile(null)
+          }}
         />
       )}
     </div>

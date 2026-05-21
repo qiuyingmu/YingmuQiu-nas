@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Card, Modal, Input, message, Checkbox } from 'antd'
+import { Card, Modal, Input, message, Checkbox, Button, Tooltip } from 'antd'
 import {
   FileOutlined,
   FolderOutlined,
@@ -10,6 +10,7 @@ import {
   FileZipOutlined,
   AudioOutlined,
   VideoCameraOutlined,
+  ShareAltOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useFileStore } from '../stores/fileStore'
@@ -41,7 +42,7 @@ function getFileIcon(name: string, mimeType?: string) {
   return <FileOutlined style={{ fontSize: 48, color: '#8c8c8c' }} />
 }
 
-export default function FileGrid({ onFileDoubleClick }: { onFileDoubleClick?: (file: FileItem) => void }) {
+export default function FileGrid({ onFileDoubleClick, onShare }: { onFileDoubleClick?: (file: FileItem) => void; onShare?: (file: FileItem) => void }) {
   const navigate = useNavigate()
   const currentFiles = useFileStore((s) => s.currentFiles)
   const currentFolderId = useFileStore((s) => s.currentFolderId)
@@ -94,7 +95,7 @@ export default function FileGrid({ onFileDoubleClick }: { onFileDoubleClick?: (f
             <Card
               key={file.id}
               size="small"
-              className={`cursor-pointer hover:shadow-md transition-shadow ${
+              className={`cursor-pointer hover:shadow-md transition-shadow group ${
                 isSelected ? 'ring-2 ring-blue-500' : ''
               }`}
               onClick={() => handleFileClick(file)}
@@ -115,6 +116,20 @@ export default function FileGrid({ onFileDoubleClick }: { onFileDoubleClick?: (f
                 >
                   <Checkbox checked={isSelected} />
                 </div>
+                <div
+                  className="absolute top-0 right-0 z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Tooltip title="分享">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<ShareAltOutlined />}
+                      onClick={() => onShare?.(file)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+                  </Tooltip>
+                </div>
                 <div className="flex flex-col items-center gap-2 py-2">
                   {file.isFolder ? (
                     <FolderOutlined style={{ fontSize: 48, color: '#faad14' }} />
@@ -132,7 +147,7 @@ export default function FileGrid({ onFileDoubleClick }: { onFileDoubleClick?: (f
       </div>
       {currentFiles.length === 0 && (
         <div className="flex items-center justify-center h-64 text-gray-400">
-          ??????
+          此文件夹为空
         </div>
       )}
     </div>

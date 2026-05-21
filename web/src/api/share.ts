@@ -1,0 +1,56 @@
+import client from './client'
+
+export interface ShareLinkResponse {
+  id: string
+  fileId: string
+  fileName: string
+  isFolder: boolean
+  token: string
+  hasPassword: boolean
+  expiresAt: string | null
+  maxDownloads: number
+  downloadCount: number
+  isActive: boolean
+  createdAt: string
+  shareUrl: string
+}
+
+export interface CreateShareRequest {
+  fileId: string
+  password?: string
+  expiresAt?: string
+  maxDownloads?: number
+}
+
+export const shareApi = {
+  // 创建分享 (认证)
+  create: (data: CreateShareRequest) =>
+    client.post<ShareLinkResponse>('/shares', data).then(r => r.data),
+
+  // 取消分享 (认证)
+  cancel: (id: string) =>
+    client.delete(`/shares/${id}`),
+
+  // 我的分享列表 (认证)
+  getList: () =>
+    client.get<ShareLinkResponse[]>('/shares').then(r => r.data),
+
+  // 查询文件分享状态 (认证)
+  getStatus: (fileId: string) =>
+    client.get<ShareLinkResponse | null>(`/shares/${fileId}/status`).then(r => r.data),
+
+  // 获取分享信息 (公开)
+  getPublic: (token: string) =>
+    client.get<ShareLinkResponse>(`/s/${token}`).then(r => r.data),
+
+  // 验证密码 (公开)
+  verifyPassword: (token: string, password: string) =>
+    client.post<{ shareToken: string }>(`/s/${token}/verify`, { password }).then(r => r.data),
+
+  // 获取分享下载URL (公开)
+  getDownloadUrl: (token: string, shareToken?: string) => {
+    let url = `/api/s/${token}/download`
+    if (shareToken) url += `?shareToken=${shareToken}`
+    return url
+  },
+}
