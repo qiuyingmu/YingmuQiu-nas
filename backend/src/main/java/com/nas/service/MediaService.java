@@ -98,10 +98,13 @@ public class MediaService {
             }
         }
 
-        // Generate thumbnail asynchronously (inline for simplicity)
+        // Save meta first so thumbnail service can update hasThumbnail
+        MediaMeta savedMeta = mediaMetaRepository.save(meta);
+
+        // Generate thumbnail
         thumbnailService.generateThumbnail(fileId, storagePath, mimeType);
 
-        return mediaMetaRepository.save(meta);
+        return savedMeta;
     }
 
     /**
@@ -179,12 +182,12 @@ public class MediaService {
      * Get detailed media info for a single file.
      */
     public MediaResponse getMediaDetail(UUID userId, UUID fileId) {
-        // ???????????
+        // 先验证文件属于当前用户
         FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("??", fileId));
+                .orElseThrow(() -> new ResourceNotFoundException("文件", fileId));
 
         MediaMeta meta = mediaMetaRepository.findByFileId(fileId)
-                .orElseThrow(() -> new ResourceNotFoundException("????", fileId));
+                .orElseThrow(() -> new ResourceNotFoundException("媒体文件", fileId));
 
         return buildResponse(meta, file);
     }
