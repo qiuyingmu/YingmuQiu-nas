@@ -84,7 +84,7 @@ export default function FileList({ onFileDoubleClick, onShare }: { onFileDoubleC
 
   const handleDownload = async (record: FileItem) => {
     try {
-      const url = await getDownloadUrl(record.id)
+      const url = getDownloadUrl(record.id)
       window.open(url, '_blank')
     } catch {
       message.error('下载失败')
