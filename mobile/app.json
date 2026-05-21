@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "YingmuQiu-nas",
+    "slug": "yingmuqiu-nas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1677ff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qiuyingmu.nas"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.qiuyingmu.nas"
+    },
+    "plugins": [
+      "expo-image-picker"
+    ]
+  }
+}
