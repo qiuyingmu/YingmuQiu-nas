@@ -28,26 +28,26 @@ export default function FileUploader({ visible, onClose }: FileUploaderProps) {
         },
       )
       onSuccess?.({})
-      message.success(`${(file as File).name} ????`)
+      message.success(`${(file as File).name} 上传成功`)
       fetchFiles(currentFolderId ?? undefined)
     } catch (error) {
       onError?.(error as Error)
-      message.error(`${(file as File).name} ????`)
+      message.error(`${(file as File).name} 上传失败`)
     }
   }
 
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" key={String(visible)}>
       <div className="bg-white rounded-lg p-6 w-full max-w-lg">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">????</h3>
+          <h3 className="text-lg font-medium">上传文件</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
-            ?
+            ✕
           </button>
         </div>
 
@@ -62,8 +62,8 @@ export default function FileUploader({ visible, onClose }: FileUploaderProps) {
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
-          <p className="ant-upload-text">?????????????</p>
-          <p className="ant-upload-hint">?????????</p>
+          <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+          <p className="ant-upload-hint">支持单个或批量上传</p>
         </Dragger>
 
         <div className="flex justify-end">
@@ -71,7 +71,7 @@ export default function FileUploader({ visible, onClose }: FileUploaderProps) {
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded"
           >
-            ??
+            关闭
           </button>
         </div>
       </div>
