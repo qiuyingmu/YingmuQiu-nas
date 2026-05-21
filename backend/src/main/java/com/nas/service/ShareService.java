@@ -17,11 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,8 +41,10 @@ public class ShareService {
     private final PasswordEncoder passwordEncoder;
     private final StorageConfig storageConfig;
 
-    // Track password-verified sessions: shareToken -> set of verifyTokens
-    private final Map<String, String> verifiedSessions = new ConcurrentHashMap<>();
+    // Track password-verified sessions: shareToken -> verifyToken -> timestamp
+    // Entries auto-expire after 1 hour
+    private static final long VERIFY_TOKEN_TTL_MS = 3600_000L;
+    private final Map<String, Map<String, Long>> verifiedSessions = new ConcurrentHashMap<>();
 
     public ShareService(ShareLinkRepository shareLinkRepository,
                         FileRepository fileRepository,
@@ -151,9 +156,10 @@ public class ShareService {
             throw new BusinessException("密码错误");
         }
 
-        // Generate temporary verification token
+        // Generate temporary verification token (1 hour TTL)
         String verifyToken = UUID.randomUUID().toString().replace("-", "");
-        verifiedSessions.put(token + ":" + verifyToken, token);
+        verifiedSessions.computeIfAbsent(token, k -> new ConcurrentHashMap<>())
+                .put(verifyToken, System.currentTimeMillis() + VERIFY_TOKEN_TTL_MS);
 
         FileEntity file = fileRepository.findById(link.getFileId())
                 .orElseThrow(() -> new BusinessException("分享的文件已被删除"));
@@ -174,8 +180,14 @@ public class ShareService {
             if (verifyToken == null || verifyToken.isBlank()) {
                 throw new BusinessException("需要密码验证");
             }
-            String stored = verifiedSessions.get(token + ":" + verifyToken);
-            if (stored == null || !stored.equals(token)) {
+            Map<String, Long> tokens = verifiedSessions.get(token);
+            if (tokens == null) {
+                throw new BusinessException("密码验证已过期或无效，请重新验证");
+            }
+            Long expiry = tokens.get(verifyToken);
+            if (expiry == null || System.currentTimeMillis() > expiry) {
+                tokens.remove(verifyToken);
+                if (tokens.isEmpty()) verifiedSessions.remove(token);
                 throw new BusinessException("密码验证已过期或无效，请重新验证");
             }
         }
@@ -208,7 +220,7 @@ public class ShareService {
         long start = 0;
         long end = fileLength - 1;
         String contentType = file.getMimeType() != null ? file.getMimeType() : "application/octet-stream";
-        String contentDisposition = "attachment; filename=\"" + file.getName() + "\"";
+        String contentDisposition = "attachment; filename*=UTF-8''" + URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
 
         boolean isPartial = false;
 
