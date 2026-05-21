@@ -1,20 +1,22 @@
-# YingmuQiu-nas 部署文档
+# YingmuQiu-nas 部署文档 / Deployment Guide
 
-> Docker Compose 一键部署 | Nginx 反代 | PostgreSQL 16 | SSL/HTTPS
+> **中文** | [English](#english)
 
 [![Deploy](https://img.shields.io/badge/Deploy-Docker_Compose-blue)]()
 [![Database](https://img.shields.io/badge/Database-PostgreSQL_16-blue)]()
 
 ---
 
-## 前置要求
+## 🇨🇳 部署指南
+
+### 前置要求
 
 - 云服务器（2核4G以上，Ubuntu 22.04+）
 - Docker + Docker Compose
 - 域名（可选，推荐）
 - FFmpeg 安装
 
-## 快速部署
+### 快速部署
 
 ```bash
 # 1. 克隆项目
@@ -30,11 +32,25 @@ docker compose -f deploy/docker-compose.yml --env-file .env up -d
 
 # 4. 查看日志
 docker compose -f deploy/docker-compose.yml logs -f
+
+# 5. 重新构建部署（拉取最新代码后）
+git pull
+docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
-## Nginx + HTTPS（推荐）
+### 系统编码说明
 
-使用反向代理 + Certbot 为域名配置 HTTPS：
+系统默认全链路 UTF-8 编码：
+
+| 层级 | 配置 | 说明 |
+|------|------|------|
+| Nginx | `charset utf-8;` | 静态资源 + API 响应 UTF-8 |
+| JVM | `-Dfile.encoding=UTF-8` | 容器内 Java 编码 |
+| Spring Boot | `server.servlet.encoding.force=true` | 强制全部响应 UTF-8 |
+| PostgreSQL | `--encoding=UTF-8` | 数据库字符集 |
+| 文件下载 | `filename*=UTF-8''` | 中文文件名 URL 编码 |
+
+### Nginx + HTTPS（推荐）
 
 ```bash
 # 安装 nginx + certbot
@@ -67,30 +83,14 @@ server {
 certbot --nginx -d nas.yourdomain.com
 ```
 
-## 单独部署（不用 Docker）
-
-```bash
-# 后端
-cd backend
-mvn clean package -DskipTests
-export JWT_SECRET=...
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/nasdb
-java -jar target/nas-backend-1.0.0.jar --spring.profiles.active=prod
-
-# 前端
-cd web
-npm install
-npm run build
-# 用 nginx 或 caddy 托管 web/dist 目录
-```
-
-## 数据库迁移
+### 数据库迁移
 
 - 开发环境用 H2，DDL auto
 - 生产环境建议用 PostgreSQL + Flyway 或手动管理 schema
 - 首次启动可临时设 `ddl-auto: update` 建表，然后改为 `validate`
+- 数据库使用 UTF-8 编码存储中文
 
-## 安全注意事项
+### 安全注意事项
 
 1. 生产环境务必关闭 H2 Console
 2. JWT_SECRET 必须使用强随机密钥（至少256位）
@@ -99,3 +99,59 @@ npm run build
 5. 定期备份 PostgreSQL 数据库
 6. 配置防火墙只开放 80/443 端口
 7. 不要将 `.env` 文件提交到 Git
+
+---
+
+## 🇬🇧 English
+
+### Prerequisites
+
+- Cloud server (2C4G+, Ubuntu 22.04+)
+- Docker + Docker Compose
+- Domain name (recommended)
+- FFmpeg
+
+### Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/qiuyingmu/YingmuQiu-nas.git
+cd YingmuQiu-nas
+
+# 2. Environment
+cp deploy/.env.example .env
+# Edit .env with JWT_SECRET and DB_PASSWORD
+
+# 3. Start
+docker compose -f deploy/docker-compose.yml --env-file .env up -d
+```
+
+### Encoding
+
+Full-stack UTF-8 encoding:
+
+| Layer | Config | Note |
+|-------|--------|------|
+| Nginx | `charset utf-8;` | Static + API UTF-8 |
+| JVM | `-Dfile.encoding=UTF-8` | Java encoding in container |
+| Spring Boot | `server.servlet.encoding.force=true` | Force UTF-8 responses |
+| PostgreSQL | `--encoding=UTF-8` | Database charset |
+| Downloads | `filename*=UTF-8''` | Chinese filename support |
+
+### Nginx + HTTPS
+
+```bash
+apt install nginx certbot python3-certbot-nginx
+# Configure reverse proxy (see Chinese section above)
+certbot --nginx -d nas.yourdomain.com
+```
+
+### Security
+
+1. Disable H2 Console in production
+2. Use strong JWT_SECRET (256-bit minimum)
+3. Enable HTTPS
+4. Restrict storage directory permissions
+5. Regular PostgreSQL backup
+6. Firewall: only allow port 80/443
+7. Never commit `.env` to Git
