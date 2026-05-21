@@ -17,8 +17,6 @@ import java.util.concurrent.TimeUnit;
  * 登录频率限制过滤器
  * 同一 IP 5 次登录失败后锁定 15 分钟
  */
-@Component
-@Order(1)
 public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(LoginRateLimitFilter.class);
