@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -83,12 +84,12 @@ public class FileController {
 
         if (name == null || name.isBlank()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "?????????"));
+                    .body(ApiResponse.error(400, "文件夹名称不能为空"));
         }
 
         FileResponse folder = fileService.createFolder(userId, name, parentId);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("????", folder));
+                .body(ApiResponse.success("创建成功", folder));
     }
 
     // ---------- Rename/Move ----------
@@ -106,7 +107,7 @@ public class FileController {
                 : null;
 
         FileResponse updated = fileService.updateFile(userId, id, name, parentId);
-        return ResponseEntity.ok(ApiResponse.success("????", updated));
+        return ResponseEntity.ok(ApiResponse.success("更新成功", updated));
     }
 
     // ---------- Batch delete (move to trash) ----------
@@ -120,11 +121,11 @@ public class FileController {
         List<UUID> ids = body.get("ids");
         if (ids == null || ids.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "?????????ID"));
+                    .body(ApiResponse.error(400, "请指定要删除的文件ID"));
         }
 
         fileService.deleteFiles(userId, ids);
-        return ResponseEntity.ok(ApiResponse.success("??????", null));
+        return ResponseEntity.ok(ApiResponse.success("已移入回收站", null));
     }
 
     // ---------- Trash list ----------
@@ -147,11 +148,11 @@ public class FileController {
         List<UUID> ids = body.get("ids");
         if (ids == null || ids.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "?????????ID"));
+                    .body(ApiResponse.error(400, "请指定要恢复的文件ID"));
         }
 
         fileService.restoreFiles(userId, ids);
-        return ResponseEntity.ok(ApiResponse.success("????", null));
+        return ResponseEntity.ok(ApiResponse.success("恢复成功", null));
     }
 
     // ---------- Empty trash ----------
@@ -165,12 +166,15 @@ public class FileController {
         List<UUID> ids = body.get("ids");
         if (ids == null || ids.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "???????????ID"));
+                    .body(ApiResponse.error(400, "请指定要永久删除的文件ID"));
         }
 
         fileService.emptyTrash(userId, ids);
-        return ResponseEntity.ok(ApiResponse.success("?????", null));
+        return ResponseEntity.ok(ApiResponse.success("已永久删除", null));
     }
+
+    private static final Set<String> BLOCKED_EXTENSIONS = Set.of(
+            "exe", "sh", "bat", "cmd", "dll", "msi", "vbs", "ps1", "jar");
 
     // ---------- Upload ----------
 
@@ -182,13 +186,27 @@ public class FileController {
 
         if (file.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "????????"));
+                    .body(ApiResponse.error(400, "上传文件不能为空"));
+        }
+
+        // 检查文件扩展名
+        String originalName = file.getOriginalFilename();
+        if (originalName != null) {
+            String ext = originalName.toLowerCase();
+            int dot = ext.lastIndexOf('.');
+            if (dot >= 0) {
+                ext = ext.substring(dot + 1);
+                if (BLOCKED_EXTENSIONS.contains(ext)) {
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.error(400, "不支持上传此文件类型: ." + ext));
+                }
+            }
         }
 
         UUID userId = UUID.fromString(auth.getName());
         FileResponse response = fileService.uploadFile(userId, file, parentId);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("????", response));
+                .body(ApiResponse.success("上传成功", response));
     }
 
     // ---------- Download (with Range header support) ----------
