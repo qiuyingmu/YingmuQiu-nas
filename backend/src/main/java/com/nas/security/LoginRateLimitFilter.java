@@ -52,7 +52,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             log.warn("登录被限流: IP={}, 剩余={}s", clientIp, remaining / 1000);
 
             response.setContentType("application/json;charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_TOO_MANY_REQUESTS);
+            response.setStatus(429);
             response.getWriter().write(
                     "{\"code\":429,\"message\":\"登录尝试过于频繁，请 " + (remaining / 1000) + " 秒后重试\"}");
             return;
