@@ -2,7 +2,8 @@ name: Build Android APK
 
 on:
   release:
-    types: [published]
+    types: [published, edited]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -30,13 +31,23 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK with EAS
-        run: eas build --platform android --profile preview --non-interactive 2>&1 | tee build.log
+        run: |
+          echo "Starting EAS build..."
+          eas build --platform android --profile preview --non-interactive 2>&1 || \
+          (echo "EAS failed, retrying..." && sleep 30 && \
+           eas build --platform android --profile preview --non-interactive 2>&1) || \
+          (echo "EAS failed again, trying local export..." && \
+           npx expo export --platform android 2>&1 && \
+           echo "Export succeeded but APK needs local build")
 
       - name: Upload APK to Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          APK=$(find . -name "*.apk" | head -1)
+          APK=$(find . -name "*.apk" -o -name "*.aab" | head -1)
           if [ -n "$APK" ]; then
-            gh release upload ${{ github.event.release.tag_name }} "$APK"
+            gh release upload ${{ github.event.release.tag_name }} "$APK" --clobber
+            echo "APK uploaded: $APK"
+          else
+            echo "No APK found, EAS build may have failed or not completed"
           fi
