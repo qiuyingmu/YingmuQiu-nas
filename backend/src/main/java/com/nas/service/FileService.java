@@ -8,6 +8,7 @@ import com.nas.model.FileEntity;
 import com.nas.model.User;
 import com.nas.repository.FileRepository;
 import com.nas.repository.UserRepository;
+import com.nas.websocket.FileChangeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -39,15 +40,18 @@ public class FileService {
     private final UserRepository userRepository;
     private final StorageConfig storageConfig;
     private final MediaService mediaService;
+    private final FileChangeHandler fileChangeHandler;
 
     public FileService(FileRepository fileRepository,
                        UserRepository userRepository,
                        StorageConfig storageConfig,
-                       MediaService mediaService) {
+                       MediaService mediaService,
+                       FileChangeHandler fileChangeHandler) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.storageConfig = storageConfig;
         this.mediaService = mediaService;
+        this.fileChangeHandler = fileChangeHandler;
     }
 
     // ---------- List ----------
@@ -118,7 +122,7 @@ public class FileService {
         // If parentId provided, verify parent exists
         if (parentId != null) {
             fileRepository.findByIdAndUserIdAndIsDeletedFalse(parentId, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("????", parentId));
+                    .orElseThrow(() -> new ResourceNotFoundException("父文件夹", parentId));
         }
 
         FileEntity folder = FileEntity.builder()
@@ -136,7 +140,7 @@ public class FileService {
     @Transactional
     public FileResponse updateFile(UUID userId, UUID fileId, String name, UUID parentId) {
         FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("??", fileId));
+                .orElseThrow(() -> new ResourceNotFoundException("文件", fileId));
 
         if (name != null && !name.equals(file.getName())) {
             UUID targetParentId = parentId != null ? parentId : file.getParentId();
@@ -147,12 +151,14 @@ public class FileService {
         if (parentId != null && !parentId.equals(file.getParentId())) {
             // Verify new parent exists
             fileRepository.findByIdAndUserIdAndIsDeletedFalse(parentId, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("????", parentId));
+                    .orElseThrow(() -> new ResourceNotFoundException("父文件夹", parentId));
             checkDuplicateName(userId, parentId, file.getName());
             file.setParentId(parentId);
         }
 
-        return FileResponse.fromEntity(fileRepository.save(file));
+        FileResponse response = FileResponse.fromEntity(fileRepository.save(file));
+        fileChangeHandler.notifyFileChange(userId, "update", fileId);
+        return response;
     }
 
     // ---------- Delete (move to trash) ----------
@@ -161,8 +167,9 @@ public class FileService {
     public void deleteFiles(UUID userId, List<UUID> ids) {
         for (UUID id : ids) {
             FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(id, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("??", id));
+                    .orElseThrow(() -> new ResourceNotFoundException("文件", id));
             softDelete(file);
+            fileChangeHandler.notifyFileChange(userId, "delete", id);
         }
     }
 
@@ -193,15 +200,16 @@ public class FileService {
     public void restoreFiles(UUID userId, List<UUID> ids) {
         for (UUID id : ids) {
             FileEntity file = fileRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("??", id));
+                    .orElseThrow(() -> new ResourceNotFoundException("文件", id));
 
             if (!file.getUserId().equals(userId)) {
-                throw new BusinessException("???????");
+                throw new BusinessException("无权操作此文件");
             }
 
             file.setDeleted(false);
             file.setDeletedAt(null);
             fileRepository.save(file);
+            fileChangeHandler.notifyFileChange(userId, "restore", id);
         }
     }
 
@@ -209,10 +217,10 @@ public class FileService {
     public void emptyTrash(UUID userId, List<UUID> ids) {
         for (UUID id : ids) {
             FileEntity file = fileRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("??", id));
+                    .orElseThrow(() -> new ResourceNotFoundException("文件", id));
 
             if (!file.getUserId().equals(userId)) {
-                throw new BusinessException("???????");
+                throw new BusinessException("无权操作此文件");
             }
 
             // Delete physical file if not a folder
@@ -234,12 +242,12 @@ public class FileService {
     public FileResponse uploadFile(UUID userId, MultipartFile multipartFile, UUID parentId) {
         if (parentId != null) {
             fileRepository.findByIdAndUserIdAndIsDeletedFalse(parentId, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("????", parentId));
+                    .orElseThrow(() -> new ResourceNotFoundException("父文件夹", parentId));
         }
 
         String originalName = multipartFile.getOriginalFilename();
         if (originalName == null || originalName.isBlank()) {
-            throw new BusinessException("???????");
+            throw new BusinessException("文件名不能为空");
         }
 
         checkDuplicateName(userId, parentId, originalName);
@@ -276,11 +284,11 @@ public class FileService {
 
             // Update user storage used
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BusinessException("?????"));
+                    .orElseThrow(() -> new BusinessException("用户未找到"));
             if (user.getStorageUsed() + multipartFile.getSize() > user.getStorageQuota()) {
                 // Clean up uploaded file
                 Files.deleteIfExists(targetPath);
-                throw new BusinessException("??????");
+                throw new BusinessException("存储空间不足");
             }
             user.setStorageUsed(user.getStorageUsed() + multipartFile.getSize());
             userRepository.save(user);
@@ -298,12 +306,15 @@ public class FileService {
                 }
             }
 
+            // Notify file change
+            fileChangeHandler.notifyFileChange(userId, "create", savedFile.getId());
+
             return FileResponse.fromEntity(savedFile);
 
         } catch (BusinessException e) {
             throw e;
         } catch (IOException e) {
-            throw new BusinessException("??????: " + e.getMessage());
+            throw new BusinessException("文件上传失败: " + e.getMessage());
         }
     }
 
@@ -311,15 +322,15 @@ public class FileService {
 
     public DownloadResult getDownloadResource(UUID userId, UUID fileId, String rangeHeader) {
         FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("??", fileId));
+                .orElseThrow(() -> new ResourceNotFoundException("文件", fileId));
 
         if (file.isFolder()) {
-            throw new BusinessException("???????");
+            throw new BusinessException("无法下载文件夹");
         }
 
         Path filePath = storageConfig.resolveRelativePath(file.getStoragePath());
         if (!Files.exists(filePath)) {
-            throw new ResourceNotFoundException("??????: " + file.getName());
+            throw new ResourceNotFoundException("文件存储丢失: " + file.getName());
         }
 
         long fileLength = file.getSizeBytes();
@@ -341,7 +352,7 @@ public class FileService {
                     end = Long.parseLong(range.substring(dashIndex + 1));
                 }
                 if (start > end || start >= fileLength) {
-                    throw new BusinessException("Range ????");
+                    throw new BusinessException("Range 范围无效");
                 }
                 isPartial = true;
             } catch (NumberFormatException e) {
@@ -371,7 +382,7 @@ public class FileService {
         Optional<FileEntity> existing = fileRepository
                 .findByUserIdAndParentIdAndNameAndIsDeletedFalse(userId, parentId, name);
         if (existing.isPresent()) {
-            throw new BusinessException("????????????/???: " + name);
+            throw new BusinessException("同一目录下已存在同名文件/文件夹: " + name);
         }
     }
 
