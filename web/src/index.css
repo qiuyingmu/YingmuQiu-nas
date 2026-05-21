@@ -27,3 +27,36 @@ body {
 .ant-table-wrapper {
   flex: 1;
 }
+
+/* ========== 全局动画 ========== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 选中文件动画 */
+@keyframes selectPulse {
+  0% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0.4); }
+  70% { box-shadow: 0 0 0 4px rgba(22, 119, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0); }
+}
