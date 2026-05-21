@@ -19,9 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -337,7 +338,7 @@ public class FileService {
         long start = 0;
         long end = fileLength - 1;
         String contentType = file.getMimeType() != null ? file.getMimeType() : "application/octet-stream";
-        String contentDisposition = "attachment; filename=\"" + file.getName() + "\"";
+        String contentDisposition = "attachment; filename*=UTF-8''" + URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
 
         boolean isPartial = false;
 
