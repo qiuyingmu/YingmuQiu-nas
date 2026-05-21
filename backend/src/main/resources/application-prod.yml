@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nasdb}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:nas}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+app:
+  storage:
+    dir: ${APP_STORAGE_DIR:/data/nas-storage}
+  ffmpeg:
+    path: ${APP_FFMPEG_PATH:ffmpeg}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000
+
+logging:
+  level:
+    com.nas: INFO
+    org.springframework.security: WARN

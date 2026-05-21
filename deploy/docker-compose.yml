@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/nasdb
+      - SPRING_DATASOURCE_USERNAME=nas
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - APP_STORAGE_DIR=/data/nas-storage
+      - APP_FFMPEG_PATH=/usr/bin/ffmpeg
+    volumes:
+      - nas-data:/data/nas-storage
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=nasdb
+      - POSTGRES_USER=nas
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nas -d nasdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  nas-data:
+  pg-data:
