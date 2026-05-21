@@ -9,6 +9,9 @@ import java.util.UUID;
 @Table(name = "file_entities", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "parent_id", "name",
             "is_deleted"})
+}, indexes = {
+    @Index(name = "idx_file_user_name", columnList = "user_id, name"),
+    @Index(name = "idx_file_parent", columnList = "parent_id")
 })
 @Getter
 @Setter
