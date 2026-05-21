@@ -1,4 +1,11 @@
-# 部署到云服务器
+# YingmuQiu-nas 部署文档
+
+> Docker Compose 一键部署 | Nginx 反代 | PostgreSQL 16 | SSL/HTTPS
+
+[![Deploy](https://img.shields.io/badge/Deploy-Docker_Compose-blue)]()
+[![Database](https://img.shields.io/badge/Database-PostgreSQL_16-blue)]()
+
+---
 
 ## 前置要求
 
