@@ -1,0 +1,42 @@
+name: Build Android APK
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: './mobile/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS
+        run: eas build --platform android --profile preview --non-interactive 2>&1 | tee build.log
+
+      - name: Upload APK to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK=$(find . -name "*.apk" | head -1)
+          if [ -n "$APK" ]; then
+            gh release upload ${{ github.event.release.tag_name }} "$APK"
+          fi
