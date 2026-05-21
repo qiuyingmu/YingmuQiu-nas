@@ -35,10 +35,13 @@ function PublicRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+import ErrorBoundary from './components/ErrorBoundary'
+
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/files" replace />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/" element={<Navigate to="/files" replace />} />
 
       <Route
         element={
@@ -68,5 +71,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/files" replace />} />
     </Routes>
+    </ErrorBoundary>
   )
 }
