@@ -24,8 +24,8 @@ COPY --from=backend-build /app/backend/target/nas-backend-1.0.0.jar ./app.jar
 # Copy frontend build
 COPY --from=frontend-build /app/web/dist ./dist
 
-# Copy nginx
-RUN apk add --no-cache nginx
+# Copy nginx and ffmpeg (for video thumbnails)
+RUN apk add --no-cache nginx ffmpeg
 COPY deploy/nginx.conf /etc/nginx/http.d/default.conf
 
 # Entrypoint: start nginx + java

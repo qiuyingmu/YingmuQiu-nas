@@ -11,7 +11,7 @@ echo "============================================"
 echo ""
 
 # ---- 1. 检查环境 ----
-echo "[1/6] 检查环境..."
+echo "[1/5] 检查环境..."
 
 # Check OS
 if [ ! -f /etc/os-release ]; then
@@ -28,7 +28,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # ---- 2. 安装 Docker ----
-echo "[2/6] 安装 Docker..."
+echo "[2/5] 安装 Docker..."
 
 if ! command -v docker &> /dev/null; then
     apt-get update -qq
@@ -44,15 +44,8 @@ else
     echo "  Docker already installed: $(docker --version)"
 fi
 
-# ---- 3. 安装 FFmpeg ----
-echo "[3/6] 安装 FFmpeg..."
-if ! command -v ffmpeg &> /dev/null; then
-    apt-get install -y -qq ffmpeg
-fi
-echo "  FFmpeg: $(ffmpeg -version 2>&1 | head -1)"
-
-# ---- 4. 克隆项目 ----
-echo "[4/6] 克隆项目..."
+# ---- 3. 克隆项目 ----
+echo "[3/5] 克隆项目..."
 PROJ_DIR="/opt/yingmuqiu-nas"
 if [ -d "$PROJ_DIR" ]; then
     echo "  项目已存在，更新代码..."
@@ -64,7 +57,7 @@ else
 fi
 
 # ---- 5. 配置环境变量 ----
-echo "[5/6] 配置环境变量..."
+echo "[4/5] 配置环境变量..."
 ENV_FILE="$PROJ_DIR/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -87,8 +80,8 @@ echo "  JWT_SECRET: $(grep JWT_SECRET $ENV_FILE | cut -d= -f2)"
 echo "  DB_PASSWORD: $(grep DB_PASSWORD $ENV_FILE | cut -d= -f2)"
 echo ""
 
-# ---- 6. Docker 启动 ----
-echo "[6/6] Docker 启动服务..."
+# ---- 5. Docker 启动 ----
+echo "[5/5] Docker 启动服务..."
 cd "$PROJ_DIR"
 docker compose -f deploy/docker-compose.yml --env-file .env up -d
 
