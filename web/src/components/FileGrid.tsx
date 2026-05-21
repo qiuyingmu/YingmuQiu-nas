@@ -95,8 +95,8 @@ export default function FileGrid({ onFileDoubleClick, onShare }: { onFileDoubleC
             <Card
               key={file.id}
               size="small"
-              className={`cursor-pointer hover:shadow-md transition-shadow group ${
-                isSelected ? 'ring-2 ring-blue-500' : ''
+              className={`cursor-pointer transition-all duration-200 group ${
+                isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-lg hover:-translate-y-1'
               }`}
               onClick={() => handleFileClick(file)}
               onDoubleClick={() => {
