@@ -75,7 +75,6 @@ export async function uploadFile(
   }
 
   const response = await client.post<FileItem>('/files/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
     onUploadProgress: (progressEvent) => {
       if (progressEvent.total && onProgress) {
         const percent = Math.round(
