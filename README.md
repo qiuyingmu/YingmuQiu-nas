@@ -1,272 +1,190 @@
-# YingmuQiu-nas — 个人云NAS
+# 🏠 YingmuQiu-nas — 个人云NAS / Personal Cloud NAS
 
-[![Phase](https://img.shields.io/badge/Phase-5-blue)]()
-[![Build](https://img.shields.io/badge/Build-Success-green)]()
+> **中文** | [English](#english)
+
+[![Phase](https://img.shields.io/badge/Phase-5-green)]()
+[![Build](https://img.shields.io/badge/Build-Success-brightgreen)]()
 [![Tests](https://img.shields.io/badge/Tests-36/36-passing-brightgreen)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)]()
-
-个人云存储系统 — 支持 Web 端 + 安卓端访问，一键 Docker 部署到云服务器。
-
----
-
-## Feature Overview
-
-### Phase 1 — File Management
-- File explorer (list/grid view, folder tree, breadcrumb nav)
-- File upload (drag & drop, multi-file, progress bar)
-- File download (resumable Range header support)
-- Folder CRUD (create, rename, move)
-- Trash bin (soft delete, restore, permanent delete)
-- File search (fuzzy keyword)
-- JWT auth (register, login, logout)
-
-### Phase 2 — Media Preview & Thumbnails
-- Image lightbox (fullscreen, prev/next, keyboard nav, EXIF display)
-- Video player (custom controls: play/pause, progress, volume, fullscreen)
-- Audio player (custom UI, Canvas waveform visualization)
-- Thumbnails (lazy loading, IntersectionObserver, Skeleton loading)
-- Media library (tab by type, infinite scroll, grid/list view)
-- Photo wall (grouped by year-month, year navigation)
-
-### Phase 3 — Android App (React Native + Expo)
-- Expo managed workflow, TypeScript
-- Server setup screen (first-launch config)
-- Login & Register screens
-- File browser (FlatList, folder navigation, thumbnails)
-- Media library (grid view, tab by type)
-- Settings (user info, server URL, logout)
-- Auth persisted via AsyncStorage
-
-### Phase 4 — Share Links & WebSocket Sync
-- Generate share links for files/folders
-- Password protection (BCrypt) + expiry time + download limit
-- Public share page (`/s/:token`, no login required)
-- WebSocket real-time sync (`/ws/files`)
-- Auto-refresh file list on multi-device changes
-- Share management (list, cancel)
-
-### Phase 5 — Docker Deployment
-- Multi-stage Docker build (Maven → Node → JRE+Alpine)
-- Docker Compose (app + PostgreSQL 16)
-- Nginx reverse proxy (static files, API, WebSocket)
-- SSL/HTTPS via Certbot
-- Production config with env variable injection
-- Auto CI/CD ready
+[![Docker](https://img.shields.io/badge/Docker-ready-blue)]()
 
 ---
 
-## Tech Stack
+## 🇨🇳 中文
 
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | Java 17, Spring Boot 3.3, Spring Security, Spring Data JPA |
-| **Database** | H2 (dev) / PostgreSQL 16 (prod) |
-| **ORM** | Hibernate 6 + Flyway (optional) |
-| **Auth** | JWT (jjwt 0.12.x), BCrypt |
-| **Thumbnails** | Thumbnailator (images) + FFmpeg (videos) |
-| **Metadata** | metadata-extractor (EXIF, GPS) |
-| **Web Frontend** | React 18, TypeScript, Ant Design 5, Tailwind CSS, Vite 5 |
-| **State** | Zustand (persisted auth) |
-| **Android** | React Native, Expo 52, TypeScript |
-| **Deploy** | Docker, Docker Compose, Nginx, Certbot |
+### 简介
 
----
+个人云存储系统 — Web 端 + 安卓端，一键 Docker 部署到云服务器。
 
-## Project Structure
+- **后端**: Java 17, Spring Boot 3, PostgreSQL, JWT
+- **前端**: React 18, TypeScript, Ant Design 5
+- **安卓**: React Native, Expo
+- **部署**: Docker Compose, Nginx
 
-```
-nas/
-├── backend/                    # Spring Boot API server
-│   ├── pom.xml
-│   ├── Dockerfile
-│   ├── src/main/java/com/nas/
-│   │   ├── config/             # Security, CORS, WebSocket, Storage
-│   │   ├── controller/         # Auth, File, Media, Share, PublicShare
-│   │   ├── model/              # User, FileEntity, MediaMeta, ShareLink
-│   │   ├── repository/         # JPA repositories
-│   │   ├── service/            # Business logic (6 services)
-│   │   ├── security/           # JWT provider, filter, UserDetails
-│   │   ├── websocket/          # FileChangeHandler
-│   │   ├── dto/                # Request/response DTOs
-│   │   └── exception/          # Global exception handler
-│   └── src/main/resources/
-│       ├── application.yml         # Base config
-│       ├── application-dev.yml     # H2 dev config
-│       └── application-prod.yml    # PostgreSQL prod config
-├── web/                        # React SPA frontend
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── src/
-│       ├── api/                # Axios: auth, files, media, share
-│       ├── components/         # 15+ UI components
-│       ├── pages/              # Login, Register, FileBrowser, MediaLibrary,
-│       │                       # PhotoWall, ShareView
-│       ├── hooks/              # useWebSocket
-│       ├── stores/             # Zustand: auth, files
-│       └── utils/              # Format helpers
-├── mobile/                     # React Native Android app (Expo)
-│   ├── package.json
-│   ├── app.json
-│   └── src/
-│       ├── api/                # client, auth, files
-│       ├── screens/            # ServerSetup, Login, Register, Home,
-│       │                       # Media, Settings
-│       ├── components/         # FileListItem, ImagePreview
-│       ├── context/            # AuthContext (persisted)
-│       └── utils/              # Format helpers
-├── deploy/                     # Deployment config
-│   ├── docker-compose.yml      # App + PostgreSQL
-│   ├── nginx.conf              # Reverse proxy
-│   ├── entrypoint.sh           # Container startup
-│   └── .env.example            # Environment variables template
-├── start.bat                   # One-click local launcher (Windows)
-├── integration-test.ps1        # Automated integration tests (36 tests)
-├── DEPLOY.md                   # Deployment guide
-└── README.md                   # This file
-```
+### 功能
 
----
+| Phase | 功能 | 完成 |
+|-------|------|:----:|
+| 1 | 文件管理、用户认证、回收站、搜索 | ✅ |
+| 2 | 图片预览、视频播放、缩略图、照片墙 | ✅ |
+| 3 | 安卓端 App (React Native + Expo) | ✅ |
+| 4 | 分享链接（密码/有效期/下载次数）、WebSocket多设备同步 | ✅ |
+| 5 | Docker 部署、Nginx、PostgreSQL、SSL | ✅ |
 
-## Quick Start (Local Dev)
-
-### Prerequisites
-- JDK 17+ (`java -version`)
-- Maven 3.9+ (`mvn -version`)
-- Node.js 18+ (`node -v`)
-- FFmpeg (optional, for video thumbnails)
-
-### One-Click (Windows)
-Double-click **`start.bat`** — it will auto-start both backend and frontend.
-
-### Manual
+### 快速部署
 
 ```bash
-# 1. Start backend
+# 方式1: 一键部署到云服务器
+ssh root@your-server
+curl -sSL https://raw.githubusercontent.com/qiuyingmu/YingmuQiu-nas/main/deploy/deploy.sh | bash
+
+# 方式2: 本地 Docker 启动
+git clone https://github.com/qiuyingmu/YingmuQiu-nas.git
+cd YingmuQiu-nas
+cp deploy/.env.example .env
+# 编辑 .env 填入 JWT_SECRET
+docker compose -f deploy/docker-compose.yml --env-file .env up -d
+```
+
+### 本地开发
+
+```bash
+# 后端
 cd backend
 mvn clean package -DskipTests
 java -jar target/nas-backend-1.0.0.jar --spring.profiles.active=dev
-# Backend: http://localhost:8080
 
-# 2. Start frontend
+# 前端
 cd ../web
-npm install
-npm run dev
-# Frontend: http://localhost:3000
+npm install && npm run dev
+
+# 访问 http://localhost:3000
 ```
 
-### Run Tests
+### 测试
 
 ```powershell
-# Automated integration tests (36 tests)
 powershell -ExecutionPolicy Bypass -File integration-test.ps1
+# 36项测试全部通过
 ```
 
 ---
 
-## API Reference
+## 🇬🇧 English
+
+### Overview
+
+Personal Cloud NAS with Web + Android clients, one-click Docker deployment.
+
+- **Backend**: Java 17, Spring Boot 3, PostgreSQL, JWT
+- **Frontend**: React 18, TypeScript, Ant Design 5
+- **Android**: React Native, Expo
+- **Deploy**: Docker Compose, Nginx, SSL
+
+### Features
+
+| Phase | Feature | Status |
+|-------|---------|:-----:|
+| 1 | File management, JWT auth, trash, search | ✅ |
+| 2 | Image/Video/Audio preview, thumbnails, photo wall | ✅ |
+| 3 | Android App (React Native + Expo) | ✅ |
+| 4 | Share links (password/expiry/limit), WebSocket sync | ✅ |
+| 5 | Docker deploy, Nginx, PostgreSQL, SSL | ✅ |
+
+### Quick Deploy
+
+```bash
+# Option 1: One-click cloud deploy
+ssh root@your-server
+curl -sSL https://raw.githubusercontent.com/qiuyingmu/YingmuQiu-nas/main/deploy/deploy.sh | bash
+
+# Option 2: Local Docker
+git clone https://github.com/qiuyingmu/YingmuQiu-nas.git
+cd YingmuQiu-nas
+cp deploy/.env.example .env
+# Edit .env with JWT_SECRET
+docker compose -f deploy/docker-compose.yml --env-file .env up -d
+```
+
+### Local Development
+
+```bash
+# Backend
+cd backend
+mvn clean package -DskipTests
+java -jar target/nas-backend-1.0.0.jar --spring.profiles.active=dev
+
+# Frontend
+cd ../web
+npm install && npm run dev
+
+# Open http://localhost:3000
+```
+
+### Testing
+
+```powershell
+powershell -ExecutionPolicy Bypass -File integration-test.ps1
+# 36 tests all passing
+```
+
+---
+
+## 📡 API Reference
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/register` | - | Register (username, email, password) |
-| POST | `/login` | - | Login -> JWT token |
-| GET | `/me` | JWT | Current user info |
+| POST | `/register` | - | Register |
+| POST | `/login` | - | Login → JWT |
+| GET | `/me` | JWT | Current user |
 
 ### Files (`/api/files`)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/` | File list (paginated, sorted) |
+| GET | `/` | List files (paged) |
 | GET | `/tree` | Folder tree |
 | POST | `/folder` | Create folder |
 | PUT | `/{id}` | Rename / Move |
-| DELETE | `/` | Batch delete (to trash) |
+| DELETE | `/` | Batch delete (trash) |
 | GET | `/trash` | Trash list |
-| POST | `/trash/restore` | Restore from trash |
-| DELETE | `/trash/empty` | Permanently delete |
-| POST | `/upload` | Upload file (multipart) |
-| GET | `/{id}/download` | Download (Range support) |
-| GET | `/search?q=` | Search files by name |
+| POST | `/trash/restore` | Restore |
+| POST | `/upload` | Upload |
+| GET | `/{id}/download` | Download (Range) |
+| GET | `/search?q=` | Search |
 
 ### Media (`/api/media`)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/` | Media list (type filter, paginated) |
-| GET | `/timeline` | Timeline (grouped by year-month) |
-| GET | `/{id}` | Media detail |
-| GET | `/{id}/thumbnail` | Thumbnail image (small/medium) |
-| GET | `/locations` | Media with GPS coordinates |
+| GET | `/` | Media list |
+| GET | `/timeline` | Timeline |
+| GET | `/{id}` | Detail |
+| GET | `/{id}/thumbnail` | Thumbnail |
+| GET | `/locations` | GPS-tagged |
 
-### Shares (`/api/shares` — auth required)
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/` | Create share link |
-| DELETE | `/{id}` | Cancel share |
-| GET | `/` | My share list |
-| GET | `/{fileId}/status` | Check file share status |
-
-### Public Share (`/api/s/{token}` — no auth)
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Get share info (hasPassword flag) |
-| POST | `/verify` | Verify password -> verifyToken |
-| GET | `/download` | Download shared file |
-
-### WebSocket
-| Path | Description |
-|------|-------------|
-| `/ws/files?userId=&token=` | Real-time file change notifications |
+### Shares (`/api/shares`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/` | ✅ | Create share |
+| DELETE | `/{id}` | ✅ | Cancel |
+| GET | `/` | ✅ | My shares |
+| GET | `/{token}` | ❌ | Public info |
+| POST | `/{token}/verify` | ❌ | Verify password |
+| GET | `/{token}/download` | ❌ | Download |
 
 ---
 
-## Deploy to Cloud
+## 🔒 Security
 
-```bash
-# One-command deployment
-git clone https://github.com/qiuyingmu/YingmuQiu-nas.git
-cd YingmuQiu-nas
-cp deploy/.env.example .env
-# Edit .env with JWT_SECRET and DB_PASSWORD
-docker compose -f deploy/docker-compose.yml --env-file .env up -d
-```
-
-See **[DEPLOY.md](DEPLOY.md)** for detailed instructions (Nginx, HTTPS, PostgreSQL, security).
-
----
-
-## Testing
-
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Registration | 5 | ✅ |
-| Login | 3 | ✅ |
-| JWT Auth | 3 | ✅ |
-| File CRUD | 7 | ✅ |
-| Trash | 3 | ✅ |
-| Media | 3 | ✅ |
-| Search | 1 | ✅ |
-| Permission Isolation | 2 | ✅ |
-| Edge Cases | 4 | ✅ |
-| Share Links | 5 | ✅ |
-| **Total** | **36** | **✅ All Passing** |
-
-Run tests: `powershell -ExecutionPolicy Bypass -File integration-test.ps1`
-
----
-
-## Security
-
-- JWT authentication (24h expiry)
-- BCrypt password hashing
+- JWT 24h + BCrypt
 - Path traversal protection
-- User data isolation (userId validation)
-- Unified exception handling (no internal info leak)
-- 401 response for invalid/missing tokens (not 500)
+- User data isolation
+- 401 for invalid/fake tokens (not 500)
 - Input validation (password length, username format)
-- Duplicate name prevention (including root-level)
-- Share link password protection + expiry + download limit
+- Share: password protection + expiry + download limit
 
 ---
 
-## License
+## 📝 License
 
 MIT — [qiuyingmu](https://github.com/qiuyingmu)
