@@ -33,59 +33,29 @@ public class FileChangeHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        URI uri = session.getUri();
-        if (uri == null) {
-            session.close(CloseStatus.BAD_DATA);
+        // 通过 Sec-WebSocket-Protocol 头获取 JWT Token（避免出现在 URL 查询参数中）
+        List<String> protocols = session.getHandshakeHeaders().getOrEmpty("Sec-WebSocket-Protocol");
+        if (protocols.isEmpty()) {
+            log.warn("WebSocket connection rejected: missing Sec-WebSocket-Protocol header");
+            session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
 
-        String query = uri.getQuery();
-        if (query == null) {
-            session.close(CloseStatus.BAD_DATA);
-            return;
-        }
-
-        String userIdStr = null;
-        String token = null;
-
-        for (String param : query.split("&")) {
-            String[] pair = param.split("=", 2);
-            if (pair.length == 2) {
-                if ("userId".equals(pair[0])) {
-                    userIdStr = pair[1];
-                } else if ("token".equals(pair[0])) {
-                    token = pair[1];
-                }
-            }
-        }
-
-        if (userIdStr == null || token == null) {
+        String token = protocols.get(0);
+        if (token == null || token.isBlank()) {
             session.close(CloseStatus.BAD_DATA);
             return;
         }
 
         // Validate JWT
         if (!jwtTokenProvider.validateToken(token)) {
-            log.warn("WebSocket connection rejected: invalid JWT token for userId={}", userIdStr);
+            log.warn("WebSocket connection rejected: invalid JWT token");
             session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
 
-        // Verify token userId matches
-        UUID tokenUserId = jwtTokenProvider.getUserIdFromToken(token);
-        UUID userId;
-        try {
-            userId = UUID.fromString(userIdStr);
-        } catch (IllegalArgumentException e) {
-            session.close(CloseStatus.BAD_DATA);
-            return;
-        }
-
-        if (!tokenUserId.equals(userId)) {
-            log.warn("WebSocket connection rejected: userId mismatch token={} request={}", tokenUserId, userId);
-            session.close(CloseStatus.POLICY_VIOLATION);
-            return;
-        }
+        // Extract userId from token
+        UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
         // Add session to user's session list
         userSessions.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(session);
@@ -94,33 +64,18 @@ public class FileChangeHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        try {
-            URI uri = session.getUri();
-            if (uri != null && uri.getQuery() != null) {
-                String query = uri.getQuery();
-                for (String param : query.split("&")) {
-                    String[] pair = param.split("=", 2);
-                    if (pair.length == 2 && "userId".equals(pair[0])) {
-                        try {
-                            UUID userId = UUID.fromString(pair[1]);
-                            List<WebSocketSession> sessions = userSessions.get(userId);
-                            if (sessions != null) {
-                                sessions.remove(session);
-                                if (sessions.isEmpty()) {
-                                    userSessions.remove(userId);
-                                }
-                            }
-                        } catch (IllegalArgumentException e) {
-                            log.warn("Invalid userId in WebSocket close: {}", pair[1]);
-                        }
-                        break;
-                    }
+        // Find and remove the userId associated with this session
+        for (Map.Entry<UUID, List<WebSocketSession>> entry : userSessions.entrySet()) {
+            List<WebSocketSession> sessions = entry.getValue();
+            if (sessions.remove(session)) {
+                if (sessions.isEmpty()) {
+                    userSessions.remove(entry.getKey());
                 }
+                log.info("WebSocket disconnected: sessionId={}", session.getId());
+                return;
             }
-        } catch (Exception e) {
-            log.warn("Error closing WebSocket session: {}", session.getId(), e);
         }
-        log.info("WebSocket disconnected: sessionId={}", session.getId());
+        log.info("WebSocket disconnected (untracked): sessionId={}", session.getId());
     }
 
     @Override

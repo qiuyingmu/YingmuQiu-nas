@@ -79,10 +79,42 @@ export default function ShareView() {
     }
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!token) return
-    const url = shareApi.getDownloadUrl(token, verifyToken || undefined)
-    window.open(url, '_blank')
+    setVerifying(true)
+    try {
+      const url = shareApi.getDownloadUrl(token, verifyToken || undefined)
+      const response = await fetch(url)
+
+      if (response.status === 401 || response.status === 403) {
+        // Token expired — reset to password entry
+        setVerified(false)
+        setVerifyToken(null)
+        setPassword('')
+        message.error('密码验证已过期，请重新输入密码')
+        return
+      }
+
+      if (!response.ok) {
+        message.error('下载失败')
+        return
+      }
+
+      // Successful download — trigger file save
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = fileInfo?.fileName || 'download'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      message.error('下载失败')
+    } finally {
+      setVerifying(false)
+    }
   }
 
   if (loading) {

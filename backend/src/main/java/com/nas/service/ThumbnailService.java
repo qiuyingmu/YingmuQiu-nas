@@ -86,15 +86,25 @@ public class ThumbnailService {
     // ---- Private helpers ----
 
     private void generateImageThumbnails(UUID fileId, Path sourceFile) throws IOException {
-        Thumbnails.of(sourceFile.toFile())
-                .size(SMALL_SIZE, SMALL_SIZE)
-                .outputFormat("jpg")
-                .toFile(getThumbnailPath(fileId, "small").toFile());
+        Path smallPath = getThumbnailPath(fileId, "small");
+        Path mediumPath = getThumbnailPath(fileId, "medium");
 
-        Thumbnails.of(sourceFile.toFile())
-                .size(MEDIUM_SIZE, MEDIUM_SIZE)
-                .outputFormat("jpg")
-                .toFile(getThumbnailPath(fileId, "medium").toFile());
+        try {
+            Thumbnails.of(sourceFile.toFile())
+                    .size(SMALL_SIZE, SMALL_SIZE)
+                    .outputFormat("jpg")
+                    .toFile(smallPath.toFile());
+
+            Thumbnails.of(sourceFile.toFile())
+                    .size(MEDIUM_SIZE, MEDIUM_SIZE)
+                    .outputFormat("jpg")
+                    .toFile(mediumPath.toFile());
+        } catch (Exception e) {
+            // 清理失败时已生成的孤儿文件
+            try { Files.deleteIfExists(smallPath); } catch (IOException ignored) {}
+            try { Files.deleteIfExists(mediumPath); } catch (IOException ignored) {}
+            throw e;
+        }
 
         log.debug("Generated image thumbnails for file: {}", fileId);
     }
@@ -158,7 +168,13 @@ public class ThumbnailService {
             int exitCode = process.waitFor();
             if (exitCode == 0) {
                 // Copy medium as small for video
-                Files.copy(output, getThumbnailPath(fileId, "small"));
+                try {
+                    Files.copy(output, getThumbnailPath(fileId, "small"));
+                } catch (IOException e) {
+                    // small 复制失败时清理 medium 孤儿文件
+                    Files.deleteIfExists(output);
+                    throw e;
+                }
                 log.debug("Generated video thumbnail for file: {}", fileId);
             } else {
                 log.warn("FFmpeg thumbnail generation failed with exit code {} for file: {}",

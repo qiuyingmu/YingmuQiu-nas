@@ -45,7 +45,7 @@ public class ShareLinkResponse {
                 .downloadCount(entity.getDownloadCount())
                 .isActive(entity.isActive())
                 .createdAt(entity.getCreatedAt().format(fmt))
-                .shareUrl("/api/s/" + entity.getToken())
+                .shareUrl("/s/" + entity.getToken())
                 .build();
     }
 }

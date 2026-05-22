@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-let baseURL = 'http://localhost:8080'
+let baseURL = 'http://10.0.2.2:8080'
 
 export function setBaseURL(url: string) {
   baseURL = url.replace(/\/+$/, '')

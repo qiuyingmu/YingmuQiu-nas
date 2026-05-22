@@ -71,6 +71,11 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
+        // 优先使用 nginx 设置的 X-Real-IP（可信），防止 X-Forwarded-For 伪造
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isEmpty() && !"unknown".equalsIgnoreCase(realIp)) {
+            return realIp;
+        }
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isEmpty() && !"unknown".equalsIgnoreCase(xff)) {
             return xff.split(",")[0].trim();

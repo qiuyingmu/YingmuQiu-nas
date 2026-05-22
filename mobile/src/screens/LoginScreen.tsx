@@ -26,8 +26,8 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
     setLoading(true)
     try {
       await login(username.trim(), password)
-    } catch (e: any) {
-      Alert.alert('登录失败', e?.message || '用户名或密码错误')
+    } catch (e: unknown) {
+      Alert.alert('登录失败', e instanceof Error ? e.message : '用户名或密码错误')
     } finally {
       setLoading(false)
     }

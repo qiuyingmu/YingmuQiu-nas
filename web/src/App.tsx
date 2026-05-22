@@ -19,7 +19,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     init()
-  }, [init])
+  }, [])
 
   // 等待 token 验证完成，避免闪白屏/401
   if (!initialized && token) {

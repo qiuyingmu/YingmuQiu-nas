@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [serverUrl, setServerUrlState] = useState('http://localhost:8080')
+  const [serverUrl, setServerUrlState] = useState('http://10.0.2.2:8080')
 
   // Load saved state on mount
   useEffect(() => {

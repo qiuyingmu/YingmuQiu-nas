@@ -27,8 +27,8 @@ export default function SettingsScreen() {
       await setServerUrl(newServerUrl.trim())
       setServerModalVisible(false)
       Alert.alert('成功', '服务器地址已更新')
-    } catch (e: any) {
-      Alert.alert('失败', e?.message || '保存服务器地址失败')
+    } catch (e: unknown) {
+      Alert.alert('失败', e instanceof Error ? e.message : '保存服务器地址失败')
     }
   }
 

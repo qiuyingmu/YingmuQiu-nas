@@ -39,8 +39,8 @@ export default function HomeScreen() {
     try {
       const data = await getFiles(currentParentId)
       setFiles(data)
-    } catch (e: any) {
-      Alert.alert('加载失败', e?.message || '无法获取文件列表')
+    } catch (e: unknown) {
+      Alert.alert('加载失败', e instanceof Error ? e.message : '无法获取文件列表')
     }
   }, [currentParentId])
 
@@ -73,8 +73,8 @@ export default function HomeScreen() {
       setFolderModalVisible(false)
       setFolderName('')
       await fetchFiles()
-    } catch (e: any) {
-      Alert.alert('创建失败', e?.message || '无法创建文件夹')
+    } catch (e: unknown) {
+      Alert.alert('创建失败', e instanceof Error ? e.message : '无法创建文件夹')
     }
   }
 
@@ -88,8 +88,8 @@ export default function HomeScreen() {
           try {
             await deleteFiles([item.id])
             await fetchFiles()
-          } catch (e: any) {
-            Alert.alert('删除失败', e?.message || '无法删除文件')
+          } catch (e: unknown) {
+            Alert.alert('删除失败', e instanceof Error ? e.message : '无法删除文件')
           }
         },
       },
@@ -110,8 +110,8 @@ export default function HomeScreen() {
       const mimeType = asset.mimeType || 'application/octet-stream'
       await uploadFile(asset.uri, fileName, mimeType, currentParentId)
       await fetchFiles()
-    } catch (e: any) {
-      Alert.alert('上传失败', e?.message || '文件上传出错')
+    } catch (e: unknown) {
+      Alert.alert('上传失败', e instanceof Error ? e.message : '文件上传出错')
     } finally {
       setUploading(false)
     }

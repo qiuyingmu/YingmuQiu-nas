@@ -76,8 +76,8 @@ else
 fi
 
 echo ""
-echo "  JWT_SECRET: $(grep JWT_SECRET $ENV_FILE | cut -d= -f2)"
-echo "  DB_PASSWORD: $(grep DB_PASSWORD $ENV_FILE | cut -d= -f2)"
+echo "  JWT_SECRET: ***$(grep JWT_SECRET $ENV_FILE | cut -d= -f2 | tail -c 5)"
+echo "  DB_PASSWORD: ***$(grep DB_PASSWORD $ENV_FILE | cut -d= -f2 | tail -c 5)"
 echo ""
 
 # ---- 5. Docker 启动 ----

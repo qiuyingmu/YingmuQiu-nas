@@ -10,10 +10,13 @@ import {
   FolderAddOutlined,
 } from '@ant-design/icons'
 import type { DataNode, EventDataNode } from 'antd/es/tree'
+import type { TreeProps } from 'antd/es/tree'
+import type { FileTreeItem } from '../api/files'
 import { useFileStore } from '../stores/fileStore'
 import { useNavigate } from 'react-router-dom'
 
 type AntTreeNode = EventDataNode<DataNode>
+type PathItem = { id: string; name: string }
 
 export default function FileTree() {
   const fetchFileTree = useFileStore((s) => s.fetchFileTree)
@@ -37,7 +40,7 @@ export default function FileTree() {
   const [modalValue, setModalValue] = useState('')
 
   const convertToTreeData = useCallback(
-    (nodes: any[], parentPath: any[] = []): DataNode[] => {
+    (nodes: FileTreeItem[], parentPath: PathItem[] = []): DataNode[] => {
       return nodes.map((node) => {
         const path = [...parentPath, { id: node.id, name: node.name }]
         return {
@@ -71,8 +74,8 @@ export default function FileTree() {
     setTreeData(convertToTreeData(fileTree))
   }, [fileTree, convertToTreeData])
 
-  const handleSelect = (_: React.Key[], info: { node: DataNode }) => {
-    const node = info.node as DataNode & { _path?: any[] }
+  const handleSelect: TreeProps['onSelect'] = (_, info) => {
+    const node = info.node as DataNode & { _path?: PathItem[] }
     const nodeId = String(node.key)
     if (node._path) {
       setCurrentPath(node._path)
@@ -190,7 +193,7 @@ export default function FileTree() {
               defaultExpandAll
               treeData={treeData}
               selectedKeys={currentFolderId ? [String(currentFolderId)] : []}
-              onSelect={handleSelect as any}
+              onSelect={handleSelect}
               onRightClick={({ node }) => setContextNode(node as DataNode)}
             />
           )}

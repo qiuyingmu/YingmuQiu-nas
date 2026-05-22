@@ -40,8 +40,8 @@ export default function RegisterScreen({ navigation }: { navigation: any }) {
       Alert.alert('注册成功', '请登录您的账户', [
         { text: '去登录', onPress: () => navigation.navigate('Login') },
       ])
-    } catch (e: any) {
-      Alert.alert('注册失败', e?.message || '请检查信息后重试')
+    } catch (e: unknown) {
+      Alert.alert('注册失败', e instanceof Error ? e.message : '请检查信息后重试')
     } finally {
       setLoading(false)
     }
