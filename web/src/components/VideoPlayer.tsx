@@ -87,7 +87,7 @@ export default function VideoPlayer({ open, fileId, fileName, onClose }: Props) 
   const handleError_ = () => {
     setLoading(false)
     setError(true)
-    message.error('??????')
+    message.error('视频播放失败')
   }
 
   const handleClose = () => {
@@ -135,7 +135,7 @@ export default function VideoPlayer({ open, fileId, fileName, onClose }: Props) 
 
         {error && (
           <div className="flex items-center justify-center h-64 text-gray-400">
-            ??????,?????
+            视频加载失败，请重试
           </div>
         )}
 

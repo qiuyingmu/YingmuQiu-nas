@@ -58,7 +58,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
       set({ currentFiles: files, loading: false })
     } catch {
       set({ loading: false })
-      throw new Error('????????')
+      throw new Error('获取文件列表失败')
     }
   },
 
@@ -67,7 +67,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
       const tree = await getFileTree()
       set({ fileTree: tree })
     } catch {
-      throw new Error('???????')
+      throw new Error('获取文件树失败')
     }
   },
 
@@ -82,7 +82,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
       set({ currentFiles: result, loading: false })
     } catch {
       set({ loading: false })
-      throw new Error('????')
+      throw new Error('搜索失败')
     }
   },
 
@@ -120,7 +120,7 @@ export const useFileStore = create<FileState>()((set, get) => ({
       await get().fetchFiles(get().currentFolderId ?? undefined)
     } catch {
       set({ uploading: false, uploadProgress: 0 })
-      throw new Error('????')
+      throw new Error('上传失败')
     }
   },
 

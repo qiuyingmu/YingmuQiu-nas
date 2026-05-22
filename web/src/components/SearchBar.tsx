@@ -39,7 +39,7 @@ export default function SearchBar() {
   return (
     <Input
       prefix={<SearchOutlined className="text-gray-400" />}
-      placeholder="????..."
+      placeholder="搜索文件..."
       value={value}
       onChange={(e) => {
         setValue(e.target.value)

@@ -59,7 +59,7 @@ export default function FileTree() {
       try {
         await fetchFileTree()
       } catch {
-        message.error('???????')
+        message.error('加载文件树失败')
       } finally {
         setLoading(false)
       }
@@ -101,17 +101,17 @@ export default function FileTree() {
       }
       case 'delete': {
         Modal.confirm({
-          title: '????',
-          content: `?????"${contextNode.title}"??`,
-          okText: '??',
+          title: '确认删除',
+          content: `确定要删除"${contextNode.title}"吗？`,
+          okText: '删除',
           okType: 'danger',
-          cancelText: '??',
+          cancelText: '取消',
           onOk: async () => {
             try {
               await remove(nodeId)
-              message.success('????')
+              message.success('删除成功')
             } catch {
-              message.error('????')
+              message.error('删除失败')
             }
           },
         })
@@ -125,10 +125,10 @@ export default function FileTree() {
     const parentId = contextNode ? String(contextNode.key) : undefined
     try {
       await createFolder(modalValue.trim(), parentId)
-      message.success('???????')
+      message.success('创建文件夹成功')
       setCreateModalOpen(false)
     } catch {
-      message.error('???????')
+      message.error('创建文件夹失败')
     }
   }
 
@@ -136,17 +136,17 @@ export default function FileTree() {
     if (!modalValue.trim() || !contextNode) return
     try {
       await rename(String(contextNode.key), modalValue.trim())
-      message.success('?????')
+      message.success('重命名成功')
       setRenameModalOpen(false)
     } catch {
-      message.error('?????')
+      message.error('重命名失败')
     }
   }
 
   const menuItems: MenuProps['items'] = [
-    { key: 'create-folder', label: '?????', icon: <FolderAddOutlined /> },
-    { key: 'rename', label: '???', icon: <EditOutlined /> },
-    { key: 'delete', label: '??', icon: <DeleteOutlined />, danger: true },
+    { key: 'create-folder', label: '新建文件夹', icon: <FolderAddOutlined /> },
+    { key: 'rename', label: '重命名', icon: <EditOutlined /> },
+    { key: 'delete', label: '删除', icon: <DeleteOutlined />, danger: true },
   ]
 
   if (loading) {
@@ -160,7 +160,7 @@ export default function FileTree() {
   return (
     <>
       <div className="flex items-center justify-between px-2 py-1">
-        <span className="text-xs text-gray-400">???</span>
+        <span className="text-xs text-gray-400">文件夹</span>
         <PlusOutlined
           className="cursor-pointer text-gray-400 hover:text-blue-500"
           onClick={() => {
@@ -183,7 +183,7 @@ export default function FileTree() {
       >
         <div>
           {treeData.length === 0 ? (
-            <div className="text-xs text-gray-400 text-center py-4">?????</div>
+            <div className="text-xs text-gray-400 text-center py-4">暂无文件夹</div>
           ) : (
             <Tree
               showIcon
@@ -198,34 +198,34 @@ export default function FileTree() {
       </Dropdown>
 
       <Modal
-        title="?????"
+        title="新建文件夹"
         open={createModalOpen}
         onOk={handleCreateFolder}
         onCancel={() => setCreateModalOpen(false)}
-        okText="??"
-        cancelText="??"
+        okText="确定"
+        cancelText="取消"
       >
         <Input
           value={modalValue}
           onChange={(e) => setModalValue(e.target.value)}
-          placeholder="????????"
+          placeholder="请输入文件夹名称"
           autoFocus
           onPressEnter={handleCreateFolder}
         />
       </Modal>
 
       <Modal
-        title="???"
+        title="重命名"
         open={renameModalOpen}
         onOk={handleRename}
         onCancel={() => setRenameModalOpen(false)}
-        okText="??"
-        cancelText="??"
+        okText="确定"
+        cancelText="取消"
       >
         <Input
           value={modalValue}
           onChange={(e) => setModalValue(e.target.value)}
-          placeholder="??????"
+          placeholder="请输入新名称"
           autoFocus
           onPressEnter={handleRename}
         />

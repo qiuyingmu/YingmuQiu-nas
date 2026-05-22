@@ -23,17 +23,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String usernameOrId) throws UsernameNotFoundException {
-        // ??????(????)
+        // 先按用户名查找（兼容登录）
         User user = userRepository.findByUsername(usernameOrId)
                 .orElse(null);
 
-        // ?????UUID?(JWT????)
+        // 再按UUID查找（JWT认证时使用）
         if (user == null) {
             try {
                 user = userRepository.findById(UUID.fromString(usernameOrId))
-                        .orElseThrow(() -> new UsernameNotFoundException("?????: " + usernameOrId));
+                        .orElseThrow(() -> new UsernameNotFoundException("用户不存在: " + usernameOrId));
             } catch (IllegalArgumentException e) {
-                throw new UsernameNotFoundException("?????: " + usernameOrId);
+                throw new UsernameNotFoundException("用户不存在: " + usernameOrId);
             }
         }
 

@@ -145,7 +145,7 @@ public class ThumbnailService {
         try {
             Files.createDirectories(dir);
         } catch (IOException e) {
-            throw new RuntimeException("?????????: " + dir, e);
+            throw new RuntimeException("无法创建缩略图目录: " + dir, e);
         }
         return dir;
     }

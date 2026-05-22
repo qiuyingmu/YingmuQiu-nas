@@ -7,7 +7,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  description = '??????',
+  description = '暂无文件',
   onCreateFolder,
 }: EmptyStateProps) {
   return (
@@ -19,7 +19,7 @@ export default function EmptyState({
             icon={<FolderAddOutlined />}
             onClick={onCreateFolder}
           >
-            ?????
+            新建文件夹?
           </Button>
         )}
       </Empty>

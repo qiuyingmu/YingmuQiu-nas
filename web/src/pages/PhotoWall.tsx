@@ -79,21 +79,21 @@ export default function PhotoWall() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-2">
           <CalendarOutlined className="text-blue-500 text-lg" />
-          <Text className="text-lg font-medium">???</Text>
+          <Text className="text-lg font-medium">照片墙</Text>
           <Text className="text-gray-400 text-sm ml-2">
-            {allImages.length > 0 ? `? ${allImages.length} ???` : ''}
+            {allImages.length > 0 ? `共 ${allImages.length} 张照片` : ''}
           </Text>
         </div>
 
         <div className="flex items-center gap-2">
-          <Text className="text-gray-400 text-sm">??:</Text>
+          <Text className="text-gray-400 text-sm">年份:</Text>
           <Select
             allowClear
-            placeholder="????"
+            placeholder="选择年份"
             style={{ width: 120 }}
             value={selectedYear}
             onChange={handleYearChange}
-            options={years.map((y) => ({ value: y, label: `${y}?` }))}
+            options={years.map((y) => ({ value: y, label: `${y}年` }))}
           />
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function PhotoWall() {
           </div>
         ) : groups.length === 0 ? (
           <div className="flex items-center justify-center h-64">
-            <Empty description={<span className="text-gray-400">????</span>} />
+            <Empty description={<span className="text-gray-400">暂无照片</span>} />
           </div>
         ) : (
           <div className="max-w-[1200px] mx-auto">
@@ -115,10 +115,10 @@ export default function PhotoWall() {
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-1 h-5 bg-blue-500 rounded" />
                   <Text className="text-lg font-medium">
-                    {group.year}?{group.month}?
+                    {group.year}年{group.month}月
                   </Text>
                   <Text className="text-gray-400 text-sm">
-                    ({group.items.length} ?)
+                    ({group.items.length} 张)
                   </Text>
                 </div>
 

@@ -31,17 +31,17 @@ export default function MainLayout() {
     {
       key: '/files',
       icon: <FolderOutlined />,
-      label: '????',
+      label: '文件管理',
     },
     {
       key: '/photos',
       icon: <PictureOutlined />,
-      label: '???',
+      label: '照片墙',
     },
     {
       key: '/media',
       icon: <PlaySquareOutlined />,
-      label: '???',
+      label: '媒体库',
     },
   ]
 
@@ -67,7 +67,7 @@ export default function MainLayout() {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '????',
+      label: '退出登录',
       onClick: handleLogout,
     },
   ]
@@ -126,7 +126,7 @@ export default function MainLayout() {
               icon={<UploadOutlined />}
               onClick={() => setUploadVisible(true)}
             >
-              ??
+              上传
             </Button>
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Avatar
