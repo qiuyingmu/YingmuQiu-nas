@@ -5,9 +5,6 @@ const AUTH_STORAGE_KEY = 'auth-storage'
 const client = axios.create({
   baseURL: '/api',
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 /**
