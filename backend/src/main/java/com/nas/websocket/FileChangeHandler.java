@@ -33,16 +33,33 @@ public class FileChangeHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // 通过 Sec-WebSocket-Protocol 头获取 JWT Token（避免出现在 URL 查询参数中）
-        List<String> protocols = session.getHandshakeHeaders().getOrEmpty("Sec-WebSocket-Protocol");
-        if (protocols.isEmpty()) {
-            log.warn("WebSocket connection rejected: missing Sec-WebSocket-Protocol header");
-            session.close(CloseStatus.POLICY_VIOLATION);
+        URI uri = session.getUri();
+        if (uri == null) {
+            session.close(CloseStatus.BAD_DATA);
             return;
         }
 
-        String token = protocols.get(0);
-        if (token == null || token.isBlank()) {
+        String query = uri.getQuery();
+        if (query == null) {
+            session.close(CloseStatus.BAD_DATA);
+            return;
+        }
+
+        String userIdStr = null;
+        String token = null;
+
+        for (String param : query.split("&")) {
+            String[] pair = param.split("=", 2);
+            if (pair.length == 2) {
+                if ("token".equals(pair[0])) {
+                    token = pair[1];
+                } else if ("userId".equals(pair[0])) {
+                    userIdStr = pair[1];
+                }
+            }
+        }
+
+        if (token == null) {
             session.close(CloseStatus.BAD_DATA);
             return;
         }
@@ -54,7 +71,7 @@ public class FileChangeHandler extends TextWebSocketHandler {
             return;
         }
 
-        // Extract userId from token
+        // Extract userId from token (优先使用token中的userId，忽略URL中的)
         UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
         // Add session to user's session list

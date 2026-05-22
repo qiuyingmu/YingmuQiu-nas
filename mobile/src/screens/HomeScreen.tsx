@@ -79,7 +79,7 @@ export default function HomeScreen() {
   }
 
   const handleDeleteFile = (item: FileItem) => {
-    Alert.alert('确认删除', `确定要删除「${item.name}」吗？此操作不可恢复。`, [
+    Alert.alert('确认删除', `确定要删除「${item.name}」吗？文件将被移入回收站。`, [
       { text: '取消', style: 'cancel' },
       {
         text: '删除',

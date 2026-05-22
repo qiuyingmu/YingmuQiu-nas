@@ -12,8 +12,8 @@ export function useWebSocket(userId: string | null, token: string | null) {
 
   const getWsUrl = useCallback(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    return `${protocol}//${window.location.host}/ws/files?userId=${userId}`
-  }, [userId])
+    return `${protocol}//${window.location.host}/ws/files?userId=${userId}&token=${token}`
+  }, [userId, token])
 
   const connect = useCallback(() => {
     if (!userId || !token || !mountedRef.current) return
@@ -25,7 +25,7 @@ export function useWebSocket(userId: string | null, token: string | null) {
       wsRef.current.close()
     }
 
-    const ws = new WebSocket(getWsUrl(), [token])
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {

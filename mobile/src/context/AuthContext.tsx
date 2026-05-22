@@ -52,15 +52,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = useCallback(async (username: string, password: string) => {
-    const result = await authApi.login(username, password)
-    setToken(result.token)
-    setUser(result.user)
-    setAuthToken(result.token)
-    await AsyncStorage.setItem('nas_token', result.token)
+    try {
+      const result = await authApi.login(username, password)
+      setToken(result.token)
+      setUser(result.user)
+      setAuthToken(result.token)
+      await AsyncStorage.setItem('nas_token', result.token)
+    } catch (err: unknown) {
+      // Clear stale token on any login error (invalid/expired token, wrong credentials)
+      await AsyncStorage.removeItem('nas_token')
+      setAuthToken(null)
+      setToken(null)
+      setUser(null)
+      // Re-throw with user-friendly message for network issues
+      if (err instanceof Error) {
+        const msg = err.message
+        if (msg === 'Network Error' || msg.includes('timeout') || msg.includes('connect')) {
+          throw new Error('无法连接到服务器，请检查网络连接和服务器地址')
+        }
+        throw err
+      }
+      throw new Error('登录失败，请重试')
+    }
   }, [])
 
   const register = useCallback(async (username: string, email: string, password: string) => {
-    await authApi.register(username, email, password)
+    try {
+      await authApi.register(username, email, password)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        const msg = err.message
+        if (msg === 'Network Error' || msg.includes('timeout') || msg.includes('connect')) {
+          throw new Error('无法连接到服务器，请检查网络连接和服务器地址')
+        }
+        throw err
+      }
+      throw new Error('注册失败，请重试')
+    }
   }, [])
 
   const logout = useCallback(async () => {
