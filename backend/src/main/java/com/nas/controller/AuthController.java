@@ -27,13 +27,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
         User user = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("????", user));
+                .body(ApiResponse.success("注册成功", user));
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @RequestBody LoginRequest request) {
         Map<String, Object> result = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.success("????", result));
+        return ResponseEntity.ok(ApiResponse.success("登录成功", result));
     }
 
     @GetMapping("/me")
