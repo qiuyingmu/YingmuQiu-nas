@@ -1,0 +1,17 @@
+.git
+.gitignore
+README.md
+README_EN.md
+CHANGELOG.md
+LICENSE
+start.bat
+start-services.bat
+integration-test.ps1
+nas-data/
+blog/
+backend/target/
+web/node_modules/
+mobile/node_modules/
+mobile/android/
+mobile/ios/
+*.log
