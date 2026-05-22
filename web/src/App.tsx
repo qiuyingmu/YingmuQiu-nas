@@ -9,14 +9,26 @@ import ShareView from './pages/ShareView'
 import AuthLayout from './components/AuthLayout'
 import MainLayout from './components/MainLayout'
 import { useEffect, type ReactNode } from 'react'
+import { Spin } from 'antd'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = useAuthStore((s) => s.token)
+  const loading = useAuthStore((s) => s.loading)
+  const initialized = useAuthStore((s) => s.initialized)
   const init = useAuthStore((s) => s.init)
 
   useEffect(() => {
     init()
   }, [init])
+
+  // 等待 token 验证完成，避免闪白屏/401
+  if (!initialized && token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spin size="large" />
+      </div>
+    )
+  }
 
   if (!token) {
     return <Navigate to="/login" replace />
