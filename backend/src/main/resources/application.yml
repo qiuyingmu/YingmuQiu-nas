@@ -7,9 +7,6 @@ server:
       force: true
 
 spring:
-  profiles:
-    active: dev
-
   servlet:
     multipart:
       enabled: true
