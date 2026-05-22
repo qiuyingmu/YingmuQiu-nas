@@ -176,9 +176,9 @@ graph LR
     A[Browser] -->|HTTP 80| B[Nginx]
     C[Android App] -->|HTTP 80| B
     B -->|/api/*| D[Spring Boot :8080]
-    B -->|Static Files| E[/app/dist]
+    B -->|Static Files| E["Web Frontend (app/dist)"]
     D -->|JDBC| F[PostgreSQL :5432]
-    D -->|WebSocket| G[Real-time Sync]
+    D -->|WebSocket| G["RealTime Sync"]
     D -->|FFmpeg| H[Thumbnails]
 ```
 
