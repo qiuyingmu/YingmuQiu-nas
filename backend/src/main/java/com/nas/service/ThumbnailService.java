@@ -113,10 +113,40 @@ public class ThumbnailService {
             return;
         }
 
+        // 智能选取缩略图时间点：取视频时长 30% 或 5 秒中的较小值
+        String seekTime = "00:00:01"; // 默认取第 1 秒
+        try {
+            ProcessBuilder probePb = new ProcessBuilder(
+                    ffmpegPath.replace("ffmpeg", "ffprobe"),
+                    "-v", "error",
+                    "-show_entries", "format=duration",
+                    "-of", "csv=p=0",
+                    sourceFile.toAbsolutePath().toString()
+            );
+            Process probeProcess = probePb.start();
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(probeProcess.getInputStream()))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    double duration = Double.parseDouble(line.trim());
+                    double seekSec = Math.min(duration * 0.3, 5.0);
+                    if (seekSec > 0.5) {
+                        int hh = (int) seekSec / 3600;
+                        int mm = (int) (seekSec % 3600) / 60;
+                        double ss = seekSec % 60;
+                        seekTime = String.format("%02d:%02d:%05.2f", hh, mm, ss);
+                    }
+                }
+            }
+            probeProcess.waitFor();
+        } catch (Exception e) {
+            log.debug("Could not probe video duration, using default seek: 1s");
+        }
+
         ProcessBuilder pb = new ProcessBuilder(
                 ffmpegPath,
+                "-ss", seekTime,  // 放在 -i 之前加速 seek
                 "-i", sourceFile.toAbsolutePath().toString(),
-                "-ss", "00:00:05",
                 "-vframes", "1",
                 "-s", MEDIUM_SIZE + "x" + MEDIUM_SIZE,
                 "-f", "image2",

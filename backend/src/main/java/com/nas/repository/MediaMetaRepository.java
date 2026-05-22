@@ -40,4 +40,12 @@ public interface MediaMetaRepository extends JpaRepository<MediaMeta, UUID> {
          + "AND (:type IS NULL OR m.mediaType = :type)")
     List<MediaMeta> findAllByUserIdAndType(@Param("userId") UUID userId,
                                             @Param("type") String type);
+
+    /**
+     * 查询有 GPS 坐标的媒体记录（数据库层面过滤）。
+     */
+    @Query("SELECT m FROM MediaMeta m JOIN FileEntity f ON m.fileId = f.id "
+         + "WHERE f.userId = :userId AND f.isDeleted = false "
+         + "AND m.gpsLat IS NOT NULL AND m.gpsLng IS NOT NULL")
+    List<MediaMeta> findAllByUserIdWithGps(@Param("userId") UUID userId);
 }

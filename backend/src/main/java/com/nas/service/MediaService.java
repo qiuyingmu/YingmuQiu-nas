@@ -193,11 +193,7 @@ public class MediaService {
      * Get all media entries that have GPS coordinates — database-level filtering.
      */
     public List<MediaResponse> getMediaLocations(UUID userId) {
-        List<MediaMeta> metas = mediaMetaRepository.findAllByUserIdAndType(userId, null);
-
-        List<MediaMeta> gpsMetas = metas.stream()
-                .filter(m -> m.getGpsLat() != null && m.getGpsLng() != null)
-                .collect(Collectors.toList());
+        List<MediaMeta> gpsMetas = mediaMetaRepository.findAllByUserIdWithGps(userId);
 
         if (gpsMetas.isEmpty()) return List.of();
 

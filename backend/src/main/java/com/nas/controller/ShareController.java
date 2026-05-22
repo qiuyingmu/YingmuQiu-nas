@@ -7,6 +7,7 @@ import com.nas.model.ShareLink;
 import com.nas.repository.FileRepository;
 import com.nas.repository.ShareLinkRepository;
 import com.nas.service.ShareService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,7 +36,7 @@ public class ShareController {
     @PostMapping
     public ResponseEntity<ApiResponse<ShareLinkResponse>> createShare(
             Authentication auth,
-            @RequestBody ShareLinkRequest request) {
+            @Valid @RequestBody ShareLinkRequest request) {
 
         UUID userId = UUID.fromString(auth.getName());
 

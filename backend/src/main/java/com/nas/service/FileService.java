@@ -193,12 +193,22 @@ public class FileService {
         file.setDeletedAt(LocalDateTime.now());
         fileRepository.save(file);
 
-        // Cascade delete children (user-isolated)
+        // 迭代处理子文件/文件夹（替代递归，避免深层嵌套栈溢出）
         if (file.isFolder()) {
-            List<FileEntity> children = fileRepository.findByParentIdAndUserIdAndIsDeletedFalse(
-                    file.getId(), file.getUserId());
-            for (FileEntity child : children) {
-                softDelete(child);
+            java.util.ArrayDeque<UUID> queue = new java.util.ArrayDeque<>();
+            queue.addLast(file.getId());
+            while (!queue.isEmpty()) {
+                UUID parentId = queue.removeFirst();
+                List<FileEntity> children = fileRepository.findByParentIdAndUserIdAndIsDeletedFalse(
+                        parentId, file.getUserId());
+                for (FileEntity child : children) {
+                    child.setDeleted(true);
+                    child.setDeletedAt(LocalDateTime.now());
+                    fileRepository.save(child);
+                    if (child.isFolder()) {
+                        queue.addLast(child.getId());
+                    }
+                }
             }
         }
     }
@@ -219,6 +229,12 @@ public class FileService {
 
             if (!file.getUserId().equals(userId)) {
                 throw new BusinessException("无权操作此文件");
+            }
+
+            // 验证父文件夹仍然存在
+            if (file.getParentId() != null) {
+                fileRepository.findByIdAndUserIdAndIsDeletedFalse(file.getParentId(), userId)
+                        .orElseThrow(() -> new BusinessException("原父文件夹已不存在，无法恢复"));
             }
 
             file.setDeleted(false);
@@ -316,11 +332,12 @@ public class FileService {
                     .fileHash(fileHash)
                     .build();
 
-            // Update user storage used（仅在文件成功写入后扣减）
+            // 先保存文件（数据库可能失败）
+            FileEntity savedFile = fileRepository.save(file);
+
+            // 文件保存成功后再扣减配额
             user.setStorageUsed(user.getStorageUsed() + fileSize);
             userRepository.save(user);
-
-            FileEntity savedFile = fileRepository.save(file);
 
             // Register media metadata if applicable
             if (contentType != null && (contentType.startsWith("image/")
