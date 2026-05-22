@@ -1,6 +1,7 @@
 package com.nas.service;
 
 import com.nas.config.StorageConfig;
+import com.nas.dto.DownloadResult;
 import com.nas.dto.ShareLinkRequest;
 import com.nas.dto.ShareLinkResponse;
 import com.nas.exception.BusinessException;
@@ -277,40 +278,5 @@ public class ShareService {
         String raw = UUID.randomUUID().toString().replace("-", "")
                 + UUID.randomUUID().toString().replace("-", "");
         return raw.substring(0, 32);
-    }
-
-    // ---------- DownloadResult inner class ----------
-
-    public static class DownloadResult {
-        private final Resource resource;
-        private final String contentType;
-        private final String contentDisposition;
-        private final long contentLength;
-        private final long start;
-        private final long end;
-        private final long fileLength;
-        private final boolean isPartial;
-
-        public DownloadResult(Resource resource, String contentType, String contentDisposition,
-                              long contentLength, long start, long end, long fileLength,
-                              boolean isPartial) {
-            this.resource = resource;
-            this.contentType = contentType;
-            this.contentDisposition = contentDisposition;
-            this.contentLength = contentLength;
-            this.start = start;
-            this.end = end;
-            this.fileLength = fileLength;
-            this.isPartial = isPartial;
-        }
-
-        public Resource getResource() { return resource; }
-        public String getContentType() { return contentType; }
-        public String getContentDisposition() { return contentDisposition; }
-        public long getContentLength() { return contentLength; }
-        public long getStart() { return start; }
-        public long getEnd() { return end; }
-        public long getFileLength() { return fileLength; }
-        public boolean isPartial() { return isPartial; }
     }
 }

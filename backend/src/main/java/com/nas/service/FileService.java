@@ -1,6 +1,7 @@
 package com.nas.service;
 
 import com.nas.config.StorageConfig;
+import com.nas.dto.DownloadResult;
 import com.nas.dto.FileResponse;
 import com.nas.exception.BusinessException;
 import com.nas.exception.ResourceNotFoundException;
@@ -142,6 +143,19 @@ public class FileService {
     public FileResponse updateFile(UUID userId, UUID fileId, String name, UUID parentId) {
         FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("文件", fileId));
+
+        // 防止将文件夹移入自身或子文件夹（循环引用）
+        if (parentId != null && file.isFolder()) {
+            UUID currentId = parentId;
+            while (currentId != null) {
+                if (currentId.equals(fileId)) {
+                    throw new BusinessException("不能将文件夹移入自身或子文件夹");
+                }
+                FileEntity parent = fileRepository.findByIdAndUserIdAndIsDeletedFalse(currentId, userId)
+                        .orElse(null);
+                currentId = parent != null ? parent.getParentId() : null;
+            }
+        }
 
         if (name != null && !name.equals(file.getName())) {
             UUID targetParentId = parentId != null ? parentId : file.getParentId();
@@ -446,38 +460,5 @@ public class FileService {
         return sb.toString();
     }
 
-    // ---------- DownloadResult inner class ----------
-
-    public static class DownloadResult {
-        private final Resource resource;
-        private final String contentType;
-        private final String contentDisposition;
-        private final long contentLength;
-        private final long start;
-        private final long end;
-        private final long fileLength;
-        private final boolean isPartial;
-
-        public DownloadResult(Resource resource, String contentType, String contentDisposition,
-                              long contentLength, long start, long end, long fileLength,
-                              boolean isPartial) {
-            this.resource = resource;
-            this.contentType = contentType;
-            this.contentDisposition = contentDisposition;
-            this.contentLength = contentLength;
-            this.start = start;
-            this.end = end;
-            this.fileLength = fileLength;
-            this.isPartial = isPartial;
-        }
-
-        public Resource getResource() { return resource; }
-        public String getContentType() { return contentType; }
-        public String getContentDisposition() { return contentDisposition; }
-        public long getContentLength() { return contentLength; }
-        public long getStart() { return start; }
-        public long getEnd() { return end; }
-        public long getFileLength() { return fileLength; }
-        public boolean isPartial() { return isPartial; }
-    }
+    // ---------- Helpers ----------
 }

@@ -1,9 +1,9 @@
 package com.nas.controller;
 
 import com.nas.dto.ApiResponse;
+import com.nas.dto.DownloadResult;
 import com.nas.dto.ShareLinkResponse;
 import com.nas.service.ShareService;
-import com.nas.service.ShareService.DownloadResult;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

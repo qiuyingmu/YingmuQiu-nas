@@ -13,9 +13,9 @@ mobile/android/build/
 mobile/android/app/build/
 mobile/android/captures/
 
-# Android SDK (local install)
-/C:/Android/
-/C:/Java/
+# Mobile build artifacts
+mobile/*.apk
+mobile/*.aab
 
 # IDE
 .idea/

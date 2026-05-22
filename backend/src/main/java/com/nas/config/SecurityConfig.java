@@ -2,6 +2,7 @@ package com.nas.config;
 
 import com.nas.security.JwtAuthenticationFilter;
 import com.nas.security.LoginRateLimitFilter;
+import com.nas.security.ShareRateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +48,7 @@ public class SecurityConfig {
             )
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .addFilterBefore(new LoginRateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new ShareRateLimitFilter(), JwtAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

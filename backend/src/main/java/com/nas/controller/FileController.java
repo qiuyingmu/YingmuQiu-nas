@@ -1,9 +1,13 @@
 package com.nas.controller;
 
 import com.nas.dto.ApiResponse;
+import com.nas.dto.BatchIdsRequest;
+import com.nas.dto.CreateFolderRequest;
 import com.nas.dto.FileResponse;
+import com.nas.dto.UpdateFileRequest;
+import com.nas.dto.DownloadResult;
 import com.nas.service.FileService;
-import com.nas.service.FileService.DownloadResult;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -74,20 +78,10 @@ public class FileController {
     @PostMapping("/folder")
     public ResponseEntity<ApiResponse<FileResponse>> createFolder(
             Authentication auth,
-            @RequestBody Map<String, Object> body) {
+            @Valid @RequestBody CreateFolderRequest request) {
 
         UUID userId = UUID.fromString(auth.getName());
-        String name = (String) body.get("name");
-        UUID parentId = body.get("parentId") != null
-                ? UUID.fromString((String) body.get("parentId"))
-                : null;
-
-        if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "文件夹名称不能为空"));
-        }
-
-        FileResponse folder = fileService.createFolder(userId, name, parentId);
+        FileResponse folder = fileService.createFolder(userId, request.getName(), request.getParentId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("创建成功", folder));
     }
@@ -98,15 +92,10 @@ public class FileController {
     public ResponseEntity<ApiResponse<FileResponse>> updateFile(
             Authentication auth,
             @PathVariable UUID id,
-            @RequestBody Map<String, Object> body) {
+            @Valid @RequestBody UpdateFileRequest request) {
 
         UUID userId = UUID.fromString(auth.getName());
-        String name = (String) body.get("name");
-        UUID parentId = body.get("parentId") != null
-                ? UUID.fromString((String) body.get("parentId"))
-                : null;
-
-        FileResponse updated = fileService.updateFile(userId, id, name, parentId);
+        FileResponse updated = fileService.updateFile(userId, id, request.getName(), request.getParentId());
         return ResponseEntity.ok(ApiResponse.success("更新成功", updated));
     }
 
@@ -115,16 +104,10 @@ public class FileController {
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteFiles(
             Authentication auth,
-            @RequestBody Map<String, List<UUID>> body) {
+            @Valid @RequestBody BatchIdsRequest request) {
 
         UUID userId = UUID.fromString(auth.getName());
-        List<UUID> ids = body.get("ids");
-        if (ids == null || ids.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "请指定要删除的文件ID"));
-        }
-
-        fileService.deleteFiles(userId, ids);
+        fileService.deleteFiles(userId, request.getIds());
         return ResponseEntity.ok(ApiResponse.success("已移入回收站", null));
     }
 
@@ -142,16 +125,10 @@ public class FileController {
     @PostMapping("/trash/restore")
     public ResponseEntity<ApiResponse<Void>> restoreFiles(
             Authentication auth,
-            @RequestBody Map<String, List<UUID>> body) {
+            @Valid @RequestBody BatchIdsRequest request) {
 
         UUID userId = UUID.fromString(auth.getName());
-        List<UUID> ids = body.get("ids");
-        if (ids == null || ids.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "请指定要恢复的文件ID"));
-        }
-
-        fileService.restoreFiles(userId, ids);
+        fileService.restoreFiles(userId, request.getIds());
         return ResponseEntity.ok(ApiResponse.success("恢复成功", null));
     }
 
@@ -160,16 +137,10 @@ public class FileController {
     @DeleteMapping("/trash/empty")
     public ResponseEntity<ApiResponse<Void>> emptyTrash(
             Authentication auth,
-            @RequestBody Map<String, List<UUID>> body) {
+            @Valid @RequestBody BatchIdsRequest request) {
 
         UUID userId = UUID.fromString(auth.getName());
-        List<UUID> ids = body.get("ids");
-        if (ids == null || ids.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "请指定要永久删除的文件ID"));
-        }
-
-        fileService.emptyTrash(userId, ids);
+        fileService.emptyTrash(userId, request.getIds());
         return ResponseEntity.ok(ApiResponse.success("已永久删除", null));
     }
 

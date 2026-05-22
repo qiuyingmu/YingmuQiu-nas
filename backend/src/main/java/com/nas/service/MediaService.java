@@ -5,6 +5,8 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.GpsDirectory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nas.config.StorageConfig;
 import com.nas.dto.MediaResponse;
 import com.nas.exception.ResourceNotFoundException;
@@ -248,6 +250,8 @@ public class MediaService {
                 .build();
     }
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * Extract EXIF metadata from an image file using metadata-extractor.
      * Returns a map with structured fields.
@@ -257,8 +261,6 @@ public class MediaService {
         try {
             File file = new File(storagePath);
             Metadata metadata = ImageMetadataReader.readMetadata(file);
-
-            StringBuilder exifJson = new StringBuilder("{");
 
             // Extract GPS
             GpsDirectory gpsDir = metadata.getFirstDirectoryOfType(GpsDirectory.class);
@@ -274,19 +276,13 @@ public class MediaService {
                 }
             }
 
-            // Extract image dimensions and other metadata
-            boolean first = true;
+            // Extract all tags into a JSON tree using Jackson
+            ObjectNode exifRoot = objectMapper.createObjectNode();
             for (Directory dir : metadata.getDirectories()) {
                 for (Tag tag : dir.getTags()) {
-                    if (!first) exifJson.append(",");
-                    first = false;
-                    exifJson.append("\"")
-                            .append(escapeJson(tag.getDirectoryName()))
-                            .append(".")
-                            .append(escapeJson(tag.getTagName()))
-                            .append("\":\"")
-                            .append(escapeJson(tag.getDescription()))
-                            .append("\"");
+                    String key = tag.getDirectoryName() + "." + tag.getTagName();
+                    String value = tag.getDescription();
+                    exifRoot.put(key, value != null ? value : "");
 
                     // Capture width/height from different directories
                     String tagName = tag.getTagName().toLowerCase();
@@ -309,10 +305,8 @@ public class MediaService {
                 }
             }
 
-            exifJson.append("}");
-
             Map<String, Object> exifResult = new HashMap<>();
-            exifResult.put("raw", exifJson.toString());
+            exifResult.put("raw", objectMapper.writeValueAsString(exifRoot));
             exifResult.put("width", result.get("width"));
             exifResult.put("height", result.get("height"));
             result.put("exif", exifResult);
@@ -323,14 +317,5 @@ public class MediaService {
         }
 
         return result;
-    }
-
-    private String escapeJson(String value) {
-        if (value == null) return "";
-        return value.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
     }
 }
