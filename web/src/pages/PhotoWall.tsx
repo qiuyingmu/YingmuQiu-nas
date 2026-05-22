@@ -148,7 +148,7 @@ export default function PhotoWall() {
           items={allImages}
           currentIndex={imagePreviewIndex}
           onClose={() => setPreviewItem(null)}
-          onIndexChange={(idx) => {
+          onIndexChange={(idx: number) => {
             const matched = groups
               .flatMap((g) => g.items)
               .find((it) => it.fileId === allImages[idx].fileId)
