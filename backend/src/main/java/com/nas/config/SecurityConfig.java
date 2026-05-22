@@ -48,7 +48,7 @@ public class SecurityConfig {
             )
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .addFilterBefore(new LoginRateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(new ShareRateLimitFilter(), JwtAuthenticationFilter.class)
+            .addFilterBefore(new ShareRateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
