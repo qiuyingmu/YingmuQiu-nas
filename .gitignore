@@ -1,43 +1,33 @@
-# Build
+# Java
 backend/target/
-web/dist/
-web/node_modules/
-mobile/node_modules/
+*.class
 *.jar
 *.war
+
+# Node
+web/node_modules/
+mobile/node_modules/
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/captures/
+
+# Android SDK (local install)
+/C:/Android/
+/C:/Java/
 
 # IDE
 .idea/
 *.iml
 .vscode/
-.project
-.classpath
-.settings/
 
 # OS
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
-*~
 
-# NAS Data (runtime)
-nas-data/
-backend/nas-data/
+# Env
+.env
+*.local
 
 # Logs
 *.log
-logs/
-
-# Environment
-.env
-!.env.example
-
-# Maven
-backend/.mvn/wrapper/maven-wrapper.jar
-
-# Expo
-mobile/.expo/
-mobile/dist/
-mobile/android/
-mobile/ios/
