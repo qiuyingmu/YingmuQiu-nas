@@ -50,10 +50,18 @@ public class ShareController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> cancelShare(
             Authentication auth,
-            @PathVariable UUID id) {
+            @PathVariable String id) {
+
+        UUID shareId;
+        try {
+            shareId = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(400, "无效的分享ID"));
+        }
 
         UUID userId = UUID.fromString(auth.getName());
-        shareService.cancelShare(userId, id);
+        shareService.cancelShare(userId, shareId);
         return ResponseEntity.ok(ApiResponse.success("分享已取消", null));
     }
 
@@ -71,10 +79,17 @@ public class ShareController {
     @GetMapping("/{fileId}/status")
     public ResponseEntity<ApiResponse<?>> getShareStatus(
             Authentication auth,
-            @PathVariable UUID fileId) {
+            @PathVariable String fileId) {
+
+        UUID fId;
+        try {
+            fId = UUID.fromString(fileId);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(ApiResponse.success("success", java.util.Map.of("shared", false)));
+        }
 
         UUID userId = UUID.fromString(auth.getName());
-        var shareLink = shareLinkRepository.findByFileIdAndUserIdAndIsActiveTrue(fileId, userId);
+        var shareLink = shareLinkRepository.findByFileIdAndUserIdAndIsActiveTrue(fId, userId);
 
         if (shareLink.isPresent()) {
             ShareLink link = shareLink.get();

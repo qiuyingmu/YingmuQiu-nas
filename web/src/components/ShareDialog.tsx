@@ -104,7 +104,7 @@ export default function ShareDialog({ open, fileId, fileName, isFolder, onClose 
 
   // 取消分享
   const handleCancel = async () => {
-    if (!shareInfo) return
+    if (!shareInfo || !shareInfo.id) return
     try {
       setLoading(true)
       await shareApi.cancel(shareInfo.id)
@@ -121,9 +121,27 @@ export default function ShareDialog({ open, fileId, fileName, isFolder, onClose 
   const handleCopy = () => {
     if (!shareInfo) return
     const url = `${window.location.origin}/s/${shareInfo.token}`
-    navigator.clipboard.writeText(url).then(() => {
-      message.success('链接已复制')
-    })
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        message.success('链接已复制')
+      }).catch(() => {
+        fallbackCopy(url)
+      })
+    } else {
+      fallbackCopy(url)
+    }
+  }
+
+  function fallbackCopy(text: string) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    message.success('链接已复制')
   }
 
   const shareUrl = shareInfo ? `${window.location.origin}/s/${shareInfo.token}` : ''
