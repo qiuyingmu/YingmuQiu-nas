@@ -37,8 +37,15 @@ export const shareApi = {
     client.get<ShareLinkResponse[]>('/shares').then(r => r.data),
 
   // 查询文件分享状态 (认证)
-  getStatus: (fileId: string) =>
-    client.get<ShareLinkResponse | null>(`/shares/${fileId}/status`).then(r => r.data),
+  // 后端未分享时返回 {shared: false}，已分享时返回 ShareLinkResponse
+  getStatus: async (fileId: string): Promise<ShareLinkResponse | null> => {
+    const res = await client.get<unknown>(`/shares/${fileId}/status`)
+    const data = res.data as Record<string, unknown>
+    if (data && data.shared === false) {
+      return null
+    }
+    return data as unknown as ShareLinkResponse
+  },
 
   // 获取分享信息 (公开)
   getPublic: (token: string) =>
