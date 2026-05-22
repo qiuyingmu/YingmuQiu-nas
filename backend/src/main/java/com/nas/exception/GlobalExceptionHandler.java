@@ -31,14 +31,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error(401, "????????"));
+                .body(ApiResponse.error(401, "用户名或密码错误"));
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleUserNotFound(UsernameNotFoundException ex) {
         log.debug("User not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(404, "?????"));
+                .body(ApiResponse.error(404, "用户不存在"));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -57,13 +57,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         log.debug("Invalid argument: {}", ex.getMessage());
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error(400, "??????"));
+                .body(ApiResponse.error(400, "请求参数无效"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
         log.error("Unexpected error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(500, "???????"));
+                .body(ApiResponse.error(500, "服务器内部错误"));
     }
 }

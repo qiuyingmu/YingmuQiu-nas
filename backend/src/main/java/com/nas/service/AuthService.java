@@ -35,10 +35,10 @@ public class AuthService {
     @Transactional
     public User register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BusinessException("??????");
+            throw new BusinessException("用户名已存在");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("??????");
+            throw new BusinessException("邮箱已被注册");
         }
 
         User user = User.builder()
@@ -57,7 +57,7 @@ public class AuthService {
                         request.getUsername(), request.getPassword()));
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BusinessException("????????"));
+                .orElseThrow(() -> new BusinessException("用户名或密码错误"));
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername());
 
@@ -69,6 +69,6 @@ public class AuthService {
 
     public User getCurrentUser(String userId) {
         return userRepository.findById(java.util.UUID.fromString(userId))
-                .orElseThrow(() -> new BusinessException("?????"));
+                .orElseThrow(() -> new BusinessException("用户不存在"));
     }
 }

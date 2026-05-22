@@ -27,7 +27,7 @@ public class StorageConfig {
             Files.createDirectories(storagePath);
             log.info("Storage directory initialized at: {}", storagePath);
         } catch (Exception e) {
-            throw new RuntimeException("????????: " + storagePath, e);
+            throw new RuntimeException("无法创建存储目录: " + storagePath, e);
         }
     }
 
@@ -38,7 +38,7 @@ public class StorageConfig {
     public Path resolveRelativePath(String relativePath) {
         Path resolved = storagePath.resolve(relativePath).normalize();
         if (!resolved.startsWith(storagePath)) {
-            throw new SecurityException("??????");
+            throw new SecurityException("路径越权访问");
         }
         return resolved;
     }
