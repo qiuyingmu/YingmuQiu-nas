@@ -6,6 +6,7 @@ backend/target/
 
 # Node
 web/node_modules/
+web/dist/
 mobile/node_modules/
 mobile/android/.gradle/
 mobile/android/build/
