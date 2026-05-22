@@ -4,6 +4,7 @@ import com.nas.dto.ApiResponse;
 import com.nas.dto.ShareLinkRequest;
 import com.nas.dto.ShareLinkResponse;
 import com.nas.model.ShareLink;
+import com.nas.repository.FileRepository;
 import com.nas.repository.ShareLinkRepository;
 import com.nas.service.ShareService;
 import org.springframework.http.HttpStatus;
@@ -20,10 +21,13 @@ public class ShareController {
 
     private final ShareService shareService;
     private final ShareLinkRepository shareLinkRepository;
+    private final FileRepository fileRepository;
 
-    public ShareController(ShareService shareService, ShareLinkRepository shareLinkRepository) {
+    public ShareController(ShareService shareService, ShareLinkRepository shareLinkRepository,
+                           FileRepository fileRepository) {
         this.shareService = shareService;
         this.shareLinkRepository = shareLinkRepository;
+        this.fileRepository = fileRepository;
     }
 
     // ---------- Create share link ----------
@@ -93,12 +97,13 @@ public class ShareController {
 
         if (shareLink.isPresent()) {
             ShareLink link = shareLink.get();
-            return ResponseEntity.ok(ApiResponse.success("success", java.util.Map.of(
-                    "shared", true,
-                    "shareId", link.getId(),
-                    "token", link.getToken(),
-                    "shareUrl", "/api/s/" + link.getToken()
-            )));
+            var file = fileRepository.findById(link.getFileId()).orElse(null);
+            ShareLinkResponse response = ShareLinkResponse.fromEntity(
+                    link,
+                    file != null ? file.getName() : "(已删除)",
+                    file != null && file.isFolder()
+            );
+            return ResponseEntity.ok(ApiResponse.success("success", response));
         }
 
         return ResponseEntity.ok(ApiResponse.success("success", java.util.Map.of("shared", false)));

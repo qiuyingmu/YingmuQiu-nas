@@ -75,9 +75,10 @@ export function useWebSocket(userId: string | null, token: string | null) {
     mountedRef.current = true
     connect()
 
-    // 页面可见时立即重试
+    // 页面可见时立即重试（仅在已断开时）
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !wsRef.current?.readyState) {
+      if (document.visibilityState === 'visible' &&
+          (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED)) {
         reconnectAttemptRef.current = 0
         connect()
       }

@@ -13,6 +13,7 @@ export interface ShareLinkResponse {
   isActive: boolean
   createdAt: string
   shareUrl: string
+  verifyToken?: string
 }
 
 export interface CreateShareRequest {
@@ -45,12 +46,12 @@ export const shareApi = {
 
   // 验证密码 (公开)
   verifyPassword: (token: string, password: string) =>
-    client.post<{ shareToken: string }>(`/s/${token}/verify`, { password }).then(r => r.data),
+    client.post<{ verifyToken: string }>(`/s/${token}/verify`, { password }).then(r => r.data),
 
-  // 获取分享下载URL (公开)
-  getDownloadUrl: (token: string, shareToken?: string) => {
+  // 获取分享下载URL (公开) — 用 /api/s/ 路径走 nginx API 代理
+  getDownloadUrl: (token: string, verifyToken?: string) => {
     let url = `/api/s/${token}/download`
-    if (shareToken) url += `?shareToken=${shareToken}`
+    if (verifyToken) url += `?verifyToken=${verifyToken}`
     return url
   },
 }

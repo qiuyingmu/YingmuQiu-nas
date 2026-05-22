@@ -18,7 +18,6 @@ import {
   EyeOutlined,
 } from '@ant-design/icons'
 import { shareApi, type ShareLinkResponse } from '../api/share'
-import { formatFileSize } from '../utils/format'
 
 const { Title, Text } = Typography
 
@@ -30,7 +29,7 @@ export default function ShareView() {
   const [password, setPassword] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [verified, setVerified] = useState(false)
-  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [verifyToken, setVerifyToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -67,7 +66,11 @@ export default function ShareView() {
     setVerifying(true)
     try {
       const result = await shareApi.verifyPassword(token, password.trim())
-      setShareToken(result.shareToken)
+      if (!result.verifyToken) {
+        message.error('验证失败，后端未返回验证令牌')
+        return
+      }
+      setVerifyToken(result.verifyToken)
       setVerified(true)
     } catch {
       message.error('密码错误')
@@ -78,7 +81,7 @@ export default function ShareView() {
 
   const handleDownload = () => {
     if (!token) return
-    const url = shareApi.getDownloadUrl(token, shareToken || undefined)
+    const url = shareApi.getDownloadUrl(token, verifyToken || undefined)
     window.open(url, '_blank')
   }
 
@@ -129,9 +132,6 @@ export default function ShareView() {
             <Title level={4} className="!mb-1">
               {fileInfo?.fileName}
             </Title>
-            {!fileInfo?.isFolder && (
-              <Text type="secondary">文件大小未知</Text>
-            )}
           </div>
 
           {needPassword && !verified ? (
@@ -173,25 +173,19 @@ export default function ShareView() {
                   下载文件
                 </Button>
               )}
-              {fileInfo?.isFolder && (
+              {!fileInfo?.isFolder && (
                 <Button
-                  type="primary"
-                  icon={<DownloadOutlined />}
+                  icon={<EyeOutlined />}
                   block
                   size="large"
-                  onClick={handleDownload}
+                  onClick={() => {
+                    const url = shareApi.getDownloadUrl(token!, verifyToken || undefined)
+                    window.location.href = url
+                  }}
                 >
-                  下载文件夹
+                  在线预览
                 </Button>
               )}
-              <Button
-                icon={<EyeOutlined />}
-                block
-                size="large"
-                onClick={handleDownload}
-              >
-                在线预览
-              </Button>
             </div>
           )}
         </Card>
