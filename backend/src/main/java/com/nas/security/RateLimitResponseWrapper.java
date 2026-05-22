@@ -21,13 +21,6 @@ class RateLimitResponseWrapper extends HttpServletResponseWrapper {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public void setStatus(int status, String sm) {
-        this.httpStatus = status;
-        super.setStatus(status, sm);
-    }
-
-    @Override
     public void sendError(int status, String msg) throws java.io.IOException {
         this.httpStatus = status;
         super.sendError(status, msg);
