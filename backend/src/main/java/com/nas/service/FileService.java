@@ -253,18 +253,37 @@ public class FileService {
 
         checkDuplicateName(userId, parentId, originalName);
 
-        // Build storage path: {userId}/{uuid}_{originalName}
+        // ---- 配额检查：在写文件之前做 ----
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户未找到"));
+        long fileSize = multipartFile.getSize();
+        if (user.getStorageUsed() + fileSize > user.getStorageQuota()) {
+            throw new BusinessException("存储空间不足");
+        }
+
+        // ---- 清理文件名：防止路径遍历 ----
+        String safeName = originalName
+                .replaceAll("[/\\\\]", "_")     // 替换 / 和 \
+                .replaceAll("^\\.\\.+", "")     // 移除前导 ..
+                .replaceAll("[\0]", "");        // 移除空字符
+        if (safeName.isBlank()) {
+            throw new BusinessException("文件名不合法");
+        }
+
+        // Build storage path: {userId}/{uuid}_{safeName}
         String uuid = UUID.randomUUID().toString();
-        String storageFileName = uuid + "_" + originalName;
+        String storageFileName = uuid + "_" + safeName;
         String relativePath = userId.toString() + "/" + storageFileName;
         Path targetPath = storageConfig.resolveRelativePath(relativePath);
 
         try {
             Files.createDirectories(targetPath.getParent());
-            Files.copy(multipartFile.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Calculate SHA256 hash
-            String fileHash = calculateSha256(targetPath);
+            // ---- 流式复制 + SHA256 同时计算 ----
+            String fileHash;
+            try (InputStream is = multipartFile.getInputStream()) {
+                fileHash = calculateSha256WithCopy(is, targetPath);
+            }
 
             // Detect content type
             String contentType = multipartFile.getContentType();
@@ -278,20 +297,13 @@ public class FileService {
                     .name(originalName)
                     .isFolder(false)
                     .mimeType(contentType)
-                    .sizeBytes(multipartFile.getSize())
+                    .sizeBytes(fileSize)
                     .storagePath(relativePath)
                     .fileHash(fileHash)
                     .build();
 
-            // Update user storage used
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BusinessException("用户未找到"));
-            if (user.getStorageUsed() + multipartFile.getSize() > user.getStorageQuota()) {
-                // Clean up uploaded file
-                Files.deleteIfExists(targetPath);
-                throw new BusinessException("存储空间不足");
-            }
-            user.setStorageUsed(user.getStorageUsed() + multipartFile.getSize());
+            // Update user storage used（仅在文件成功写入后扣减）
+            user.setStorageUsed(user.getStorageUsed() + fileSize);
             userRepository.save(user);
 
             FileEntity savedFile = fileRepository.save(file);
@@ -385,6 +397,29 @@ public class FileService {
         if (existing.isPresent()) {
             throw new BusinessException("同一目录下已存在同名文件/文件夹: " + name);
         }
+    }
+
+    /**
+     * 从 InputStream 复制到目标文件，同时计算 SHA256，省去一次磁盘回读
+     */
+    private String calculateSha256WithCopy(InputStream is, Path targetPath) throws IOException {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (Exception e) {
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
+
+        try (DigestInputStream dis = new DigestInputStream(is, md)) {
+            Files.copy(dis, targetPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        byte[] digest = md.digest();
+        StringBuilder sb = new StringBuilder();
+        for (byte b : digest) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 
     private String calculateSha256(Path filePath) throws IOException {
