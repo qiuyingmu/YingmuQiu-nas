@@ -1,13 +1,16 @@
 import axios from 'axios'
 
-let baseURL = 'http://10.0.2.2:8080'
+// 默认 baseURL：模拟器用 10.0.2.2，真机需在 ServerSetupScreen 中设置
+let baseURL = ''
+
+const DEFAULT_BASE_URL = 'http://10.0.2.2:8080'
 
 export function setBaseURL(url: string) {
   baseURL = url.replace(/\/+$/, '')
 }
 
 export function getBaseURL(): string {
-  return baseURL
+  return baseURL || DEFAULT_BASE_URL
 }
 
 const client = axios.create({
@@ -17,7 +20,7 @@ const client = axios.create({
 
 client.interceptors.request.use(
   (config) => {
-    config.baseURL = baseURL + '/api'
+    config.baseURL = (baseURL || DEFAULT_BASE_URL) + '/api'
     return config
   },
   (error) => Promise.reject(error),

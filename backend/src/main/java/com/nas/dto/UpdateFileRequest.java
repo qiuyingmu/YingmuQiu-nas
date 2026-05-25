@@ -1,5 +1,6 @@
 package com.nas.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UpdateFileRequest {
 
+    @NotBlank(message = "文件名称不能为空")
     @Size(max = 255, message = "文件名称不能超过255个字符")
     private String name;
 

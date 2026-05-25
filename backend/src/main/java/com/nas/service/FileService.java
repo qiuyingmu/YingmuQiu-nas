@@ -231,10 +231,14 @@ public class FileService {
                 throw new BusinessException("无权操作此文件");
             }
 
-            // 验证父文件夹仍然存在
+            // 验证父文件夹仍然存在（允许父文件夹在回收站中）
             if (file.getParentId() != null) {
-                fileRepository.findByIdAndUserIdAndIsDeletedFalse(file.getParentId(), userId)
-                        .orElseThrow(() -> new BusinessException("原父文件夹已不存在，无法恢复"));
+                boolean parentExists = fileRepository.findById(file.getParentId())
+                        .map(p -> !p.isDeleted() || p.getUserId().equals(userId))
+                        .orElse(false);
+                if (!parentExists) {
+                    throw new BusinessException("原父文件夹已不存在，无法恢复");
+                }
             }
 
             file.setDeleted(false);
@@ -246,6 +250,8 @@ public class FileService {
 
     @Transactional
     public void emptyTrash(UUID userId, List<UUID> ids) {
+        // 收集所有需要永久删除的文件ID（包括子节点）
+        List<UUID> allIds = new ArrayList<>();
         for (UUID id : ids) {
             FileEntity file = fileRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("文件", id));
@@ -253,6 +259,20 @@ public class FileService {
             if (!file.getUserId().equals(userId)) {
                 throw new BusinessException("无权操作此文件");
             }
+
+            allIds.add(id);
+            if (file.isFolder()) {
+                collectDescendantIds(id, userId, allIds);
+            }
+        }
+
+        // 批量删除物理文件和数据库记录
+        for (UUID deleteId : allIds) {
+            FileEntity file = fileRepository.findById(deleteId).orElse(null);
+            if (file == null) continue;
+
+            // Verify ownership
+            if (!file.getUserId().equals(userId)) continue;
 
             // Delete physical file if not a folder
             if (!file.isFolder() && file.getStoragePath() != null) {
@@ -264,6 +284,29 @@ public class FileService {
             }
 
             fileRepository.delete(file);
+        }
+    }
+
+    /**
+     * 递归收集文件夹及其所有子节点的 ID
+     */
+    private void collectDescendantIds(UUID folderId, UUID userId, List<UUID> result) {
+        List<FileEntity> children = fileRepository.findByParentIdAndUserIdAndIsDeletedFalse(folderId, userId);
+        for (FileEntity child : children) {
+            result.add(child.getId());
+            if (child.isFolder()) {
+                collectDescendantIds(child.getId(), userId, result);
+            }
+        }
+        // 也收集已删除的子节点
+        List<FileEntity> deletedChildren = fileRepository.findByParentId(folderId);
+        for (FileEntity child : deletedChildren) {
+            if (child.isDeleted() && !result.contains(child.getId())) {
+                result.add(child.getId());
+                if (child.isFolder()) {
+                    collectDescendantIds(child.getId(), userId, result);
+                }
+            }
         }
     }
 

@@ -95,6 +95,7 @@ export default function AudioPlayer({ open, fileId, fileName, onClose }: Props) 
     }
     setPlaying(false)
     setCurrentTime(0)
+    setDuration(0)
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current)
     }
@@ -102,6 +103,8 @@ export default function AudioPlayer({ open, fileId, fileName, onClose }: Props) 
       audioCtxRef.current.close()
       audioCtxRef.current = null
     }
+    analyserRef.current = null
+    sourceRef.current = null
     onClose()
   }
 
@@ -176,6 +179,7 @@ export default function AudioPlayer({ open, fileId, fileName, onClose }: Props) 
       }
     >
       <audio
+        key={String(open)}
         ref={audioRef}
         src={audioUrl}
         onTimeUpdate={handleTimeUpdate}

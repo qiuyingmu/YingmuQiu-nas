@@ -42,7 +42,7 @@ public class ShareService {
     private final PasswordEncoder passwordEncoder;
     private final StorageConfig storageConfig;
 
-    // Track password-verified sessions: shareToken -> verifyToken -> timestamp
+    // Track password-verified sessions: shareToken -> ip+verifyToken -> expiry
     // Entries auto-expire after 1 hour
     private static final long VERIFY_TOKEN_TTL_MS = 3600_000L;
     private final Map<String, Map<String, Long>> verifiedSessions = new ConcurrentHashMap<>();
@@ -146,7 +146,7 @@ public class ShareService {
 
     // ---------- Verify Password (public) ----------
 
-    public ShareLinkResponse verifyPassword(String token, String password) {
+    public ShareLinkResponse verifyPassword(String token, String password, String clientIp) {
         ShareLink link = findValidShare(token);
 
         if (link.getPasswordHash() == null || link.getPasswordHash().isEmpty()) {
@@ -157,10 +157,14 @@ public class ShareService {
             throw new BusinessException("密码错误");
         }
 
-        // Generate temporary verification token (1 hour TTL)
-        String verifyToken = UUID.randomUUID().toString().replace("-", "");
+        // Generate temporary verification token (1 hour TTL), bound to client IP
+        String ipSuffix = (clientIp != null && !clientIp.isEmpty())
+                ? "_" + clientIp.replaceAll("[.:]", "_")
+                : "";
+        String verifyToken = UUID.randomUUID().toString().replace("-", "") + ipSuffix;
+        String storeKey = clientIp != null ? clientIp : "unknown";
         verifiedSessions.computeIfAbsent(token, k -> new ConcurrentHashMap<>())
-                .put(verifyToken, System.currentTimeMillis() + VERIFY_TOKEN_TTL_MS);
+                .put(storeKey, System.currentTimeMillis() + VERIFY_TOKEN_TTL_MS);
 
         FileEntity file = fileRepository.findById(link.getFileId())
                 .orElseThrow(() -> new BusinessException("分享的文件已被删除"));
@@ -173,7 +177,7 @@ public class ShareService {
     // ---------- Download via Share (public) ----------
 
     @Transactional
-    public DownloadResult getShareDownload(String token, String verifyToken, String rangeHeader) {
+    public DownloadResult getShareDownload(String token, String verifyToken, String clientIp, String rangeHeader) {
         ShareLink link = findValidShare(token);
 
         // Verify password if needed
@@ -181,13 +185,14 @@ public class ShareService {
             if (verifyToken == null || verifyToken.isBlank()) {
                 throw new BusinessException("需要密码验证");
             }
+            String ipKey = clientIp != null ? clientIp : "unknown";
             Map<String, Long> tokens = verifiedSessions.get(token);
             if (tokens == null) {
                 throw new BusinessException("密码验证已过期或无效，请重新验证");
             }
-            Long expiry = tokens.get(verifyToken);
+            Long expiry = tokens.get(ipKey);
             if (expiry == null || System.currentTimeMillis() > expiry) {
-                tokens.remove(verifyToken);
+                tokens.remove(ipKey);
                 if (tokens.isEmpty()) verifiedSessions.remove(token);
                 throw new BusinessException("密码验证已过期或无效，请重新验证");
             }

@@ -4,6 +4,7 @@ import com.nas.dto.ApiResponse;
 import com.nas.dto.DownloadResult;
 import com.nas.dto.ShareLinkResponse;
 import com.nas.service.ShareService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,8 @@ public class PublicShareController {
     @PostMapping("/{token}/verify")
     public ResponseEntity<ApiResponse<ShareLinkResponse>> verifyPassword(
             @PathVariable String token,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
 
         String password = body.get("password");
         if (password == null || password.isBlank()) {
@@ -44,7 +46,8 @@ public class PublicShareController {
                     .body(ApiResponse.error(400, "请输入密码"));
         }
 
-        ShareLinkResponse response = shareService.verifyPassword(token, password);
+        String clientIp = getClientIp(request);
+        ShareLinkResponse response = shareService.verifyPassword(token, password, clientIp);
         return ResponseEntity.ok(ApiResponse.success("密码验证成功", response));
     }
 
@@ -54,9 +57,11 @@ public class PublicShareController {
     public ResponseEntity<Resource> downloadShare(
             @PathVariable String token,
             @RequestParam(value = "verifyToken", required = false) String verifyToken,
-            @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader) {
+            @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader,
+            HttpServletRequest request) {
 
-        DownloadResult result = shareService.getShareDownload(token, verifyToken, rangeHeader);
+        String clientIp = getClientIp(request);
+        DownloadResult result = shareService.getShareDownload(token, verifyToken, clientIp, rangeHeader);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(result.getContentType()));
@@ -76,5 +81,18 @@ public class PublicShareController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(result.getResource());
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isEmpty() && !"unknown".equalsIgnoreCase(realIp)) {
+            return realIp;
+        }
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isEmpty() && !"unknown".equalsIgnoreCase(xff)) {
+            return xff.split(",")[0].trim();
+        }
+        String ri = request.getRemoteAddr();
+        return ri != null ? ri : "unknown";
     }
 }

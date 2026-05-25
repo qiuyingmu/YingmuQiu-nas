@@ -212,7 +212,7 @@ export default function ShareView() {
                   size="large"
                   onClick={() => {
                     const url = shareApi.getDownloadUrl(token!, verifyToken || undefined)
-                    window.location.href = url
+                    window.open(url, '_blank')
                   }}
                 >
                   在线预览
