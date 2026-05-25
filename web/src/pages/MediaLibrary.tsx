@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Tabs, Typography, Button, Table, Spin, Empty } from 'antd'
+import { Tabs, Typography, Button, Table, Spin, Empty, message } from 'antd'
 import {
   AppstoreOutlined,
   UnorderedListOutlined,
@@ -106,7 +106,7 @@ export default function MediaLibrary() {
   }, [page, loading, hasMore, loadData])
 
   // Preview handlers
-  const handleItemClick = (item: MediaItem) => {
+  const handleItemClick = async (item: MediaItem) => {
     if (item.mediaType === 'video') {
       setPreviewItem(item)
       setVideoOpen(true)
