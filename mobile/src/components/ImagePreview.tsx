@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Modal, View, Text, TouchableOpacity, StyleSheet, StatusBar, Dimensions } from 'react-native'
 import { Image } from 'expo-image'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBaseURL } from '../api/client'
 import { getDownloadUrl } from '../api/files'
 
@@ -14,7 +15,15 @@ interface ImagePreviewProps {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 export default function ImagePreview({ visible, fileId, fileName, onClose }: ImagePreviewProps) {
-  const imageUri = getBaseURL() + getDownloadUrl(fileId)
+  const [imageUri, setImageUri] = useState('')
+
+  useEffect(() => {
+    if (!visible || !fileId) return
+    AsyncStorage.getItem('nas_token').then((token) => {
+      const base = getBaseURL() + getDownloadUrl(fileId)
+      setImageUri(token ? `${base}?token=${token}` : base)
+    })
+  }, [visible, fileId])
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

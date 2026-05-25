@@ -23,6 +23,7 @@ import { formatFileSize, formatDateTime } from '../utils/format'
 import type { FileItem } from '../api/files'
 import { useState } from 'react'
 import { getDownloadUrl } from '../api/files'
+import { downloadWithAuth } from '../api/authResource'
 
 function getFileIcon(name: string, mimeType?: string) {
   const ext = name.split('.').pop()?.toLowerCase()
@@ -84,8 +85,7 @@ export default function FileList({ onFileDoubleClick, onShare }: { onFileDoubleC
 
   const handleDownload = async (record: FileItem) => {
     try {
-      const url = getDownloadUrl(record.id)
-      window.open(url, '_blank')
+      await downloadWithAuth(`/files/${record.id}/download`, record.name)
     } catch {
       message.error('下载失败')
     }

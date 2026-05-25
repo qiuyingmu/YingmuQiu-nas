@@ -23,6 +23,19 @@ function formatTime(seconds?: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
+const AUTH_STORAGE_KEY = 'auth-storage'
+
+function getToken(): string {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return ''
+    const parsed = JSON.parse(raw)
+    return parsed?.state?.token || ''
+  } catch {
+    return ''
+  }
+}
+
 export default function AudioPlayer({ open, fileId, fileName, onClose }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -35,7 +48,7 @@ export default function AudioPlayer({ open, fileId, fileName, onClose }: Props) 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const animFrameRef = useRef<number>(0)
 
-  const audioUrl = `/api/files/${fileId}/download`
+  const audioUrl = `/api/files/${fileId}/download?token=${getToken()}`
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current

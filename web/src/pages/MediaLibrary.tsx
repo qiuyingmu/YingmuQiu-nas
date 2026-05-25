@@ -117,7 +117,12 @@ export default function MediaLibrary() {
       setPreviewItem(item)
     } else {
       // document - maybe download?
-      window.open(`/api/files/${item.fileId}/download`, '_blank')
+      try {
+        const { downloadWithAuth } = await import('../api/authResource')
+        await downloadWithAuth(`/files/${item.fileId}/download`, item.fileName || 'download')
+      } catch {
+        message.error('下载失败')
+      }
     }
   }
 

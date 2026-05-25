@@ -24,6 +24,19 @@ function formatTime(seconds?: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
+const AUTH_STORAGE_KEY = 'auth-storage'
+
+function getToken(): string {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return ''
+    const parsed = JSON.parse(raw)
+    return parsed?.state?.token || ''
+  } catch {
+    return ''
+  }
+}
+
 export default function VideoPlayer({ open, fileId, fileName, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -33,7 +46,7 @@ export default function VideoPlayer({ open, fileId, fileName, onClose }: Props) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  const videoUrl = `/api/files/${fileId}/download`
+  const videoUrl = `/api/files/${fileId}/download?token=${getToken()}`
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current

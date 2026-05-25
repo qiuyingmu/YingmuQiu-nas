@@ -8,6 +8,7 @@ import {
   FolderOutlined,
 } from '@ant-design/icons'
 import { mediaApi } from '../api/media'
+import { createAuthBlobUrl, revokeBlobUrl } from '../api/authResource'
 
 interface Props {
   fileId: string
@@ -48,6 +49,7 @@ export default function Thumbnail({
   const [visible, setVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
 
   const dimClass = size === 'medium' ? 'w-32 h-32' : 'w-20 h-20'
 
@@ -68,6 +70,24 @@ export default function Thumbnail({
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+
+  // 通过 Axios 带 JWT 认证加载缩略图
+  useEffect(() => {
+    if (!visible || !hasThumbnail) return
+    let cancelled = false
+    createAuthBlobUrl(mediaApi.getThumbnailUrl(fileId, size))
+      .then((url) => {
+        if (!cancelled) setBlobUrl(url)
+        else revokeBlobUrl(url)
+      })
+      .catch(() => {
+        if (!cancelled) setError(true)
+      })
+    return () => {
+      cancelled = true
+      revokeBlobUrl(blobUrl)
+    }
+  }, [visible, hasThumbnail, fileId, size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLoad = useCallback(() => {
     setLoaded(true)
@@ -95,7 +115,7 @@ export default function Thumbnail({
 
       {showThumb && (
         <img
-          src={mediaApi.getThumbnailUrl(fileId, size)}
+          src={blobUrl || ''}
           alt={fileName}
           className={`w-full h-full object-cover transition-opacity duration-300 ${
             loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'

@@ -1,11 +1,12 @@
-import { useEffect, useCallback } from 'react'
-import { Modal, Button, Typography } from 'antd'
+import { useEffect, useCallback, useState } from 'react'
+import { Modal, Button, Typography, Spin } from 'antd'
 import {
   LeftOutlined,
   RightOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
 import { formatDateTime } from '../utils/format'
+import { createAuthBlobUrl, revokeBlobUrl } from '../api/authResource'
 
 const { Text } = Typography
 
@@ -33,6 +34,32 @@ export default function ImagePreview({
   onIndexChange,
 }: Props) {
   const current = items[currentIndex]
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  // 通过 Axios 带 JWT 认证加载当前图片
+  useEffect(() => {
+    if (!open || !current) return
+    setLoading(true)
+    setBlobUrl(null)
+    let cancelled = false
+    createAuthBlobUrl(`/api/files/${current.fileId}/download`)
+      .then((url) => {
+        if (!cancelled) {
+          setBlobUrl(url)
+          setLoading(false)
+        } else {
+          revokeBlobUrl(url)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+      revokeBlobUrl(blobUrl)
+    }
+  }, [open, current?.fileId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const goNext = useCallback(() => {
     if (currentIndex < items.length - 1) {
@@ -110,11 +137,17 @@ export default function ImagePreview({
             />
           )}
 
-          <img
-            src={`/api/files/${current.fileId}/download`}
-            alt={current.fileName}
-            className="max-w-full max-h-full object-contain"
-          />
+          {loading ? (
+            <div className="flex items-center justify-center w-full h-full">
+              <Spin size="large" />
+            </div>
+          ) : (
+            <img
+              src={blobUrl || ''}
+              alt={current.fileName}
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
 
           {currentIndex < items.length - 1 && (
             <Button
