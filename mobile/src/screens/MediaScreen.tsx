@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { MediaItem } from '../types'
 import { getMediaList } from '../api/files'
 import { getBaseURL } from '../api/client'
@@ -35,6 +36,14 @@ export default function MediaScreen() {
   const [mediaList, setMediaList] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
+  const [authToken, setAuthToken] = useState('')
+
+  // 从 AsyncStorage 获取 auth token，用于图片加载（expo-image 不支持自定义 header）
+  useEffect(() => {
+    AsyncStorage.getItem('nas_token').then((token) => {
+      setAuthToken(token || '')
+    })
+  }, [])
 
   const fetchMedia = useCallback(async () => {
     setLoading(true)
@@ -53,7 +62,11 @@ export default function MediaScreen() {
     fetchMedia()
   }, [fetchMedia])
 
-  const renderGridItem = ({ item }: { item: MediaItem }) => (
+  const renderGridItem = ({ item }: { item: MediaItem }) => {
+    const thumbUrl = getBaseURL() + getThumbnailUrl(item.fileId, 'medium')
+    const thumbWithToken = authToken ? `${thumbUrl}&token=${authToken}` : thumbUrl
+
+    return (
     <TouchableOpacity
       style={styles.gridItem}
       onPress={() => setPreviewItem(item)}
@@ -61,7 +74,7 @@ export default function MediaScreen() {
     >
       {item.hasThumbnail ? (
         <Image
-          source={{ uri: getBaseURL() + getThumbnailUrl(item.fileId, 'medium') }}
+          source={{ uri: thumbWithToken }}
           style={styles.thumbnail}
           contentFit="cover"
           transition={200}
@@ -74,7 +87,8 @@ export default function MediaScreen() {
         </View>
       )}
     </TouchableOpacity>
-  )
+    )
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
