@@ -9,6 +9,7 @@ import {
   Spin,
   Result,
   message,
+  Modal,
 } from 'antd'
 import {
   DownloadOutlined,
@@ -16,10 +17,13 @@ import {
   FileOutlined,
   FolderOutlined,
   EyeOutlined,
+  CloseOutlined,
 } from '@ant-design/icons'
 import { shareApi, type ShareLinkResponse } from '../api/share'
 
 const { Title, Text } = Typography
+
+const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i
 
 export default function ShareView() {
   const { token } = useParams<{ token: string }>()
@@ -31,6 +35,8 @@ export default function ShareView() {
   const [verified, setVerified] = useState(false)
   const [verifyToken, setVerifyToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState('')
 
   useEffect(() => {
     if (!token) {
@@ -210,9 +216,29 @@ export default function ShareView() {
                   icon={<EyeOutlined />}
                   block
                   size="large"
-                  onClick={() => {
+                  onClick={async () => {
                     const url = shareApi.getDownloadUrl(token!, verifyToken || undefined)
-                    window.open(url, '_blank')
+
+                    // 检查文件名后缀，判断是否可能是图片
+                    if (IMAGE_EXTENSIONS.test(fileInfo?.fileName || '')) {
+                      // 图片类：用 blob 方式加载，前端展示
+                      try {
+                        const resp = await fetch(url)
+                        if (!resp.ok) {
+                          message.error('预览加载失败')
+                          return
+                        }
+                        const blob = await resp.blob()
+                        const blobUrl = URL.createObjectURL(blob)
+                        setPreviewUrl(blobUrl)
+                        setPreviewOpen(true)
+                      } catch {
+                        message.error('预览加载失败')
+                      }
+                    } else {
+                      // 非图片：新窗口打开，由浏览器处理（PDF/视频等）
+                      window.open(url, '_blank')
+                    }
                   }}
                 >
                   在线预览
@@ -222,6 +248,34 @@ export default function ShareView() {
           )}
         </Card>
       </main>
+
+      {/* 图片预览 Modal */}
+      <Modal
+        open={previewOpen}
+        onCancel={() => {
+          URL.revokeObjectURL(previewUrl)
+          setPreviewUrl('')
+          setPreviewOpen(false)
+        }}
+        footer={null}
+        width="90vw"
+        style={{ maxWidth: '90vw', top: 20 }}
+        styles={{ body: { padding: 0, height: 'calc(100vh - 100px)' } }}
+        closeIcon={
+          <CloseOutlined className="text-white text-xl hover:text-gray-300" />
+        }
+        maskStyle={{ background: 'rgba(0,0,0,0.9)' }}
+      >
+        <div className="flex items-center justify-center w-full h-full bg-black">
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt={fileInfo?.fileName || '预览'}
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
+        </div>
+      </Modal>
 
       {/* 底部 */}
       <footer className="text-center py-4 text-gray-400 text-sm bg-white/80 backdrop-blur-sm border-t border-gray-200">
