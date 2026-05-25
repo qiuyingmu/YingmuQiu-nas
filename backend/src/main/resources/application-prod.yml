@@ -50,3 +50,10 @@ logging:
   level:
     com.nas: INFO
     org.springframework.security: WARN
+
+# 生产环境禁用 Swagger 和 H2 Console
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

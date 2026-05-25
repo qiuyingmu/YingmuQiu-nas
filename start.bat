@@ -28,6 +28,9 @@ if not exist "%JAR_PATH%" (
 )
 echo [OK] Backend jar found
 
+REM ---- Set default JWT secret for dev ----
+if not defined JWT_SECRET set JWT_SECRET=ZGV2LXNlY3JldC1rZXktZm9yLW5hcy1iYWNrZW5kLWRldi1vbmx5LW5vdC1mb3ItcHJvZAo=
+
 REM ---- Start backend ----
 echo [START] Starting backend...
 start "NAS-Backend" /MIN java -jar "%JAR_PATH%" --spring.profiles.active=dev --server.port=8080

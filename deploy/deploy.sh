@@ -76,8 +76,7 @@ else
 fi
 
 echo ""
-echo "  JWT_SECRET: ***$(grep JWT_SECRET $ENV_FILE | cut -d= -f2 | tail -c 5)"
-echo "  DB_PASSWORD: ***$(grep DB_PASSWORD $ENV_FILE | cut -d= -f2 | tail -c 5)"
+echo "  环境变量已配置（密码信息不会再次显示）"
 echo ""
 
 # ---- 5. Docker 启动 ----
@@ -88,7 +87,7 @@ docker compose -f deploy/docker-compose.yml --env-file .env up -d
 # 等待服务就绪
 echo "  等待服务就绪..."
 for i in $(seq 1 30); do
-    if curl -s http://localhost:8080/api/auth/login > /dev/null 2>&1; then
+    if curl -s http://localhost/ > /dev/null 2>&1; then
         echo "  [OK] 后端服务已就绪"
         break
     fi
@@ -105,9 +104,6 @@ echo "============================================"
 echo ""
 echo "  访问地址: http://$SERVER_IP"
 echo "  (如果配置了域名，请设置 DNS 指向本服务器)"
-echo ""
-echo "  后端 API: http://$SERVER_IP/api"
-echo "  Swagger:  http://$SERVER_IP/swagger-ui.html"
 echo ""
 echo "  查看日志:"
 echo "    docker compose -f $PROJ_DIR/deploy/docker-compose.yml logs -f"
