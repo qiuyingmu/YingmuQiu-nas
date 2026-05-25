@@ -304,7 +304,7 @@ export default function FileList({ onFileDoubleClick, onShare }: { onFileDoubleC
             loading={loading}
             pagination={false}
             size="small"
-            scroll={{ y: 'calc(100vh - 280px)' }}
+            scroll={{ x: 'max-content', y: 'calc(100vh - 280px)' }}
             locale={{
               emptyText: '此文件夹为空',
             }}
