@@ -42,3 +42,17 @@ export async function downloadWithAuth(
     URL.revokeObjectURL(url)
   }
 }
+
+/**
+ * 从 localStorage 获取 JWT token（适用于直接 URL 传参的场景）。
+ */
+export function getAuthToken(): string {
+  try {
+    const raw = localStorage.getItem('auth-storage')
+    if (!raw) return ''
+    const parsed = JSON.parse(raw)
+    return parsed?.state?.token || ''
+  } catch {
+    return ''
+  }
+}

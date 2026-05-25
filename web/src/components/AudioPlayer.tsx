@@ -6,6 +6,7 @@ import {
   SoundOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
+import { getAuthToken } from '../api/authResource'
 
 const { Text } = Typography
 
@@ -26,14 +27,7 @@ function formatTime(seconds?: number): string {
 const AUTH_STORAGE_KEY = 'auth-storage'
 
 function getToken(): string {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!raw) return ''
-    const parsed = JSON.parse(raw)
-    return parsed?.state?.token || ''
-  } catch {
-    return ''
-  }
+  return getAuthToken()
 }
 
 export default function AudioPlayer({ open, fileId, fileName, onClose }: Props) {
