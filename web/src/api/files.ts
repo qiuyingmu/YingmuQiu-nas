@@ -89,5 +89,5 @@ export async function uploadFile(
 }
 
 export function getDownloadUrl(id: string): string {
-  return `/api/files/${id}/download`
+  return `/files/${id}/download`
 }

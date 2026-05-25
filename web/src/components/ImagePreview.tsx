@@ -43,7 +43,7 @@ export default function ImagePreview({
     setLoading(true)
     setBlobUrl(null)
     let cancelled = false
-    createAuthBlobUrl(`/api/files/${current.fileId}/download`)
+    createAuthBlobUrl(`/files/${current.fileId}/download`)
       .then((url) => {
         if (!cancelled) {
           setBlobUrl(url)

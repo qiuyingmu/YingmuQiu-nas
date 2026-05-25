@@ -36,7 +36,7 @@ export const mediaApi = {
     client.get<MediaItem>(`/media/${fileId}`).then(r => r.data),
 
   getThumbnailUrl: (fileId: string, size: 'small' | 'medium' = 'small') =>
-    `/api/media/${fileId}/thumbnail?size=${size}`,
+    `/media/${fileId}/thumbnail?size=${size}`,
 
   getLocations: () =>
     client.get<MediaItem[]>('/media/locations').then(r => r.data),
