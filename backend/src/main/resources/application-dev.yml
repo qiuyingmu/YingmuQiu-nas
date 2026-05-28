@@ -30,3 +30,6 @@ app:
     path: ffmpeg
   jwt:
     secret: ${JWT_SECRET}
+  cors:
+    allowed-origins: http://localhost:3000
+  allowed-origins: http://localhost:3000

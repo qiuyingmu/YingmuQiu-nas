@@ -56,7 +56,7 @@ else
     cd "$PROJ_DIR"
 fi
 
-# ---- 5. 配置环境变量 ----
+# ---- 4. 配置环境变量 ----
 echo "[4/5] 配置环境变量..."
 ENV_FILE="$PROJ_DIR/.env"
 
@@ -68,6 +68,9 @@ if [ ! -f "$ENV_FILE" ]; then
     cat > "$ENV_FILE" << EOF
 JWT_SECRET=$JWT_SECRET
 DB_PASSWORD=$DB_PASSWORD
+SERVER_DOMAIN=$SERVER_IP
+APP_CORS_ORIGINS=http://$SERVER_IP
+APP_WS_ORIGINS=http://$SERVER_IP
 EOF
     chmod 600 "$ENV_FILE"
     echo "  环境变量已生成并保存"

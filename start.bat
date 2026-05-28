@@ -48,9 +48,8 @@ if %errorlevel% equ 0 (
 
 REM ---- Start frontend ----
 echo [START] Starting frontend...
-set NODE_EXE=C:\Users\29921\.workbuddy\binaries\node\versions\22.12.0\node.exe
 cd /d "%~dp0web"
-start "NAS-Frontend" /MIN "%NODE_EXE%" ./node_modules/vite/bin/vite.js --port 3000 --host 0.0.0.0
+start "NAS-Frontend" /MIN npx vite --port 3000 --host 0.0.0.0
 cd /d "%~dp0"
 echo [OK] Frontend starting ^(port 3000^)
 

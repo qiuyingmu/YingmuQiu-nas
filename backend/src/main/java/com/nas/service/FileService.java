@@ -250,8 +250,10 @@ public class FileService {
 
     @Transactional
     public void emptyTrash(UUID userId, List<UUID> ids) {
-        // 收集所有需要永久删除的文件ID（包括子节点）
+        // 使用 BFS 收集所有需要永久删除的文件 ID（避免深层嵌套栈溢出）
         List<UUID> allIds = new ArrayList<>();
+        java.util.ArrayDeque<UUID> queue = new java.util.ArrayDeque<>();
+
         for (UUID id : ids) {
             FileEntity file = fileRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("文件", id));
@@ -262,7 +264,34 @@ public class FileService {
 
             allIds.add(id);
             if (file.isFolder()) {
-                collectDescendantIds(id, userId, allIds);
+                queue.addLast(id);
+            }
+        }
+
+        // BFS 遍历所有子节点
+        while (!queue.isEmpty()) {
+            UUID parentId = queue.removeFirst();
+
+            // 收集未删除的子节点
+            List<FileEntity> children = fileRepository.findByParentIdAndUserIdAndIsDeletedFalse(parentId, userId);
+            for (FileEntity child : children) {
+                if (!allIds.contains(child.getId())) {
+                    allIds.add(child.getId());
+                    if (child.isFolder()) {
+                        queue.addLast(child.getId());
+                    }
+                }
+            }
+
+            // 也收集已删除的子节点
+            List<FileEntity> deletedChildren = fileRepository.findByParentId(parentId);
+            for (FileEntity child : deletedChildren) {
+                if (child.isDeleted() && !allIds.contains(child.getId())) {
+                    allIds.add(child.getId());
+                    if (child.isFolder()) {
+                        queue.addLast(child.getId());
+                    }
+                }
             }
         }
 
@@ -284,29 +313,6 @@ public class FileService {
             }
 
             fileRepository.delete(file);
-        }
-    }
-
-    /**
-     * 递归收集文件夹及其所有子节点的 ID
-     */
-    private void collectDescendantIds(UUID folderId, UUID userId, List<UUID> result) {
-        List<FileEntity> children = fileRepository.findByParentIdAndUserIdAndIsDeletedFalse(folderId, userId);
-        for (FileEntity child : children) {
-            result.add(child.getId());
-            if (child.isFolder()) {
-                collectDescendantIds(child.getId(), userId, result);
-            }
-        }
-        // 也收集已删除的子节点
-        List<FileEntity> deletedChildren = fileRepository.findByParentId(folderId);
-        for (FileEntity child : deletedChildren) {
-            if (child.isDeleted() && !result.contains(child.getId())) {
-                result.add(child.getId());
-                if (child.isFolder()) {
-                    collectDescendantIds(child.getId(), userId, result);
-                }
-            }
         }
     }
 
